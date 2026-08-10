@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navora 3D - Sistema de Gestão</title>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon"><i data-lucide="box"></i></div>
+                <div class="brand-text">
+                    <h2>NAVORA <span>3D</span></h2>
+                    <small>Gestão de Impressão</small>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-btn active" onclick="switchTab('dashboard')">
+                    <i data-lucide="layout-dashboard"></i> Dashboard
+                </button>
+                <button class="nav-btn" onclick="switchTab('inventory')">
+                    <i data-lucide="layers"></i> Estoque & Insumos
+                </button>
+                <button class="nav-btn" onclick="switchTab('calculator')">
+                    <i data-lucide="calculator"></i> Calculadora 3D
+                </button>
+                <button class="nav-btn" onclick="switchTab('sales')">
+                    <i data-lucide="shopping-cart"></i> Vendas & Pedidos
+                </button>
+                <button class="nav-btn" onclick="switchTab('suppliers')">
+                    <i data-lucide="truck"></i> Fornecedores
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p><i data-lucide="database"></i> Banco Local Ativo</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Topbar Header -->
+            <header class="topbar">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="quick-actions">
+                    <button class="btn btn-primary" onclick="openModal('modal-sale')">
+                        <i data-lucide="plus"></i> Nova Venda
+                    </button>
+                    <button class="btn btn-secondary" onclick="openModal('modal-insumo')">
+                        <i data-lucide="package-plus"></i> Novo Insumo
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB: DASHBOARD -->
+            <section id="tab-dashboard" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i data-lucide="dollar-sign"></i></div>
+                        <div class="stat-info">
+                            <small>Faturamento Total</small>
+                            <h3 id="stat-revenue">R$ 0,00</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i data-lucide="trending-up"></i></div>
+                        <div class="stat-info">
+                            <small>Lucro Estimado</small>
+                            <h3 id="stat-profit">R$ 0,00</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple"><i data-lucide="shopping-bag"></i></div>
+                        <div class="stat-info">
+                            <small>Total de Vendas</small>
+                            <h3 id="stat-sales-count">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i data-lucide="alert-triangle"></i></div>
+                        <div class="stat-info">
+                            <small>Estoque Baixo</small>
+                            <h3 id="stat-low-stock">0 itens</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-panels">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3><i data-lucide="clock"></i> Últimas Vendas</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Cliente</th>
+                                        <th>Item</th>
+                                        <th>Valor Total</th>
+                                        <th>Lucro</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-recent-sales"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3><i data-lucide="alert-circle"></i> Alertas de Insumos</h3>
+                        </div>
+                        <ul id="list-stock-alerts" class="alert-list"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: ESTOQUE E INSUMOS -->
+            <section id="tab-inventory" class="tab-content">
+                <div class="panel">
+                    <div class="panel-header flex-between">
+                        <h3>Insumos Cadastrados (Filamentos, Resinas, Outros)</h3>
+                        <button class="btn btn-primary btn-sm" onclick="openModal('modal-insumo')">
+                            <i data-lucide="plus"></i> Cadastrar Insumo
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome do Material</th>
+                                    <th>Tipo</th>
+                                    <th>Fornecedor</th>
+                                    <th>Qtd. Disponível</th>
+                                    <th>Custo Unit./g</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-insumos"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: CALCULADORA DE CUSTOS 3D -->
+            <section id="tab-calculator" class="tab-content">
+                <div class="calc-grid">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3><i data-lucide="cpu"></i> Calculadora de Preço de Impressão</h3>
+                        </div>
+                        <form id="form-calc" oninput="calculatePrintCost()">
+                            <div class="form-group">
+                                <label>Selecione o Insumo/Filamento</label>
+                                <select id="calc-insumo" required></select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Peso Utilizado (gramas)</label>
+                                    <input type="number" id="calc-weight" value="100" step="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tempo de Impressão (Horas)</label>
+                                    <input type="number" id="calc-hours" value="5" step="0.5">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Consumo Impressora (kW/h)</label>
+                                    <input type="number" id="calc-kw" value="0.15" step="0.01">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tarifa de Energia (R$/kWh)</label>
+                                    <input type="number" id="calc-energy-price" value="0.85" step="0.01">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Taxa Depreciação/Falhas (R$/h)</label>
+                                    <input type="number" id="calc-wear" value="1.50" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Margem de Lucro Desejada (%)</label>
+                                    <input type="number" id="calc-margin" value="100" step="5">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="panel calc-result-panel">
+                        <div class="panel-header">
+                            <h3>Resumo dos Custos</h3>
+                        </div>
+                        <div class="calc-breakdown">
+                            <div class="calc-item">
+                                <span>Custo do Material:</span>
+                                <strong id="res-material-cost">R$ 0,00</strong>
+                            </div>
+                            <div class="calc-item">
+                                <span>Custo de Energia:</span>
+                                <strong id="res-energy-cost">R$ 0,00</strong>
+                            </div>
+                            <div class="calc-item">
+                                <span>Depreciação & Manutenção:</span>
+                                <strong id="res-wear-cost">R$ 0,00</strong>
+                            </div>
+                            <hr>
+                            <div class="calc-item total">
+                                <span>Custo Total de Produção:</span>
+                                <strong id="res-total-cost">R$ 0,00</strong>
+                            </div>
+                            <div class="calc-item profit">
+                                <span>Lucro Calculado:</span>
+                                <strong id="res-profit-value">R$ 0,00</strong>
+                            </div>
+                            <div class="price-tag">
+                                <small>Preço Final Sugerido</small>
+                                <h2 id="res-final-price">R$ 0,00</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: VENDAS E PEDIDOS -->
+            <section id="tab-sales" class="tab-content">
+                <div class="panel">
+                    <div class="panel-header flex-between">
+                        <h3>Histórico de Vendas</h3>
+                        <button class="btn btn-primary btn-sm" onclick="openModal('modal-sale')">
+                            <i data-lucide="plus"></i> Registrar Venda
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Cliente</th>
+                                    <th>Descrição / Item</th>
+                                    <th>Material Usado</th>
+                                    <th>Qtd. Usada</th>
+                                    <th>Custo Produção</th>
+                                    <th>Preço Venda</th>
+                                    <th>Lucro</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-sales"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: FORNECEDORES -->
+            <section id="tab-suppliers" class="tab-content">
+                <div class="panel">
+                    <div class="panel-header flex-between">
+                        <h3>Fornecedores Cadastrados</h3>
+                        <button class="btn btn-primary btn-sm" onclick="openModal('modal-supplier')">
+                            <i data-lucide="plus"></i> Novo Fornecedor
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Empresa / Fornecedor</th>
+                                    <th>Contato / Vendedor</th>
+                                    <th>Telefone / WhatsApp</th>
+                                    <th>Insumos / Produtos</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-suppliers"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: CADASTRAR INSUMO -->
+    <div class="modal" id="modal-insumo">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cadastrar Novo Insumo</h3>
+                <button class="close-btn" onclick="closeModal('modal-insumo')">&times;</button>
+            </div>
+            <form id="form-insumo" onsubmit="handleSaveInsumo(event)">
+                <div class="form-group">
+                    <label>Nome do Insumo (ex: PLA Preto eSUN)</label>
+                    <input type="text" id="insumo-name" required placeholder="Marca + Tipo + Cor">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select id="insumo-type" required>
+                            <option value="Filamento PLA">Filamento PLA</option>
+                            <option value="Filamento PETG">Filamento PETG</option>
+                            <option value="Filamento ABS">Filamento ABS</option>
+                            <option value="Resina UV">Resina UV</option>
+                            <option value="Insumo Geral">Outro / Ferragem / Embalagem</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Fornecedor</label>
+                        <select id="insumo-supplier" required></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Quantidade Total (g ou un)</label>
+                        <input type="number" id="insumo-qty" required placeholder="Ex: 1000">
+                    </div>
+                    <div class="form-group">
+                        <label>Alerta de Qtd. Mínima</label>
+                        <input type="number" id="insumo-min" value="200" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Preço Pago no Rolo/Pacote (R$)</label>
+                    <input type="number" step="0.01" id="insumo-cost" required placeholder="Ex: 110.00">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-insumo')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Insumo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: REGISTRAR VENDA -->
+    <div class="modal" id="modal-sale">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Registrar Nova Venda</h3>
+                <button class="close-btn" onclick="closeModal('modal-sale')">&times;</button>
+            </div>
+            <form id="form-sale" onsubmit="handleSaveSale(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome do Cliente</label>
+                        <input type="text" id="sale-customer" required placeholder="Ex: João Silva">
+                    </div>
+                    <div class="form-group">
+                        <label>Nome do Item / Projeto</label>
+                        <input type="text" id="sale-item" required placeholder="Ex: Suporte Headset Custom">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Insumo Utilizado</label>
+                        <select id="sale-insumo" required onchange="updateSaleCost()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Gramas/Unidades Usadas</label>
+                        <input type="number" id="sale-weight" required placeholder="Ex: 85" oninput="updateSaleCost()">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Custo Adicional (Energia/Pós)</label>
+                        <input type="number" step="0.01" id="sale-extra-cost" value="0.00" oninput="updateSaleCost()">
+                    </div>
+                    <div class="form-group">
+                        <label>Preço Final de Venda (R$)</label>
+                        <input type="number" step="0.01" id="sale-price" required placeholder="Ex: 45.00">
+                    </div>
+                </div>
+                <div class="calc-breakdown-mini">
+                    <p>Custo Est. de Material: <strong id="sale-material-cost-display">R$ 0,00</strong></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-sale')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Concluir Venda & Dar Baixa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CADASTRAR FORNECEDOR -->
+    <div class="modal" id="modal-supplier">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cadastrar Fornecedor</h3>
+                <button class="close-btn" onclick="closeModal('modal-supplier')">&times;</button>
+            </div>
+            <form id="form-supplier" onsubmit="handleSaveSupplier(event)">
+                <div class="form-group">
+                    <label>Nome da Empresa / Marca</label>
+                    <input type="text" id="supplier-name" required placeholder="Ex: 3D Fila / Voolt3D">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome do Contato</label>
+                        <input type="text" id="supplier-contact" placeholder="Ex: Carlos Atendimento">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefone / WhatsApp</label>
+                        <input type="text" id="supplier-phone" placeholder="Ex: (11) 99999-8888">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Tipos de Insumos Fornecidos</label>
+                    <input type="text" id="supplier-products" placeholder="Ex: Filamentos PLA, Bicos, Peças">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-supplier')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Fornecedor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -2,11 +2,13 @@
 const STORAGE_INSUMOS = 'navora3d_insumos';
 const STORAGE_SALES = 'navora3d_sales';
 const STORAGE_SUPPLIERS = 'navora3d_suppliers';
+const STORAGE_PRODUCTS = 'navora3d_products';
 
 // State Management
 let insumos = [];
 let sales = [];
 let suppliers = [];
+let products = [];
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,6 +24,7 @@ function loadLocalStorageData() {
     insumos = JSON.parse(localStorage.getItem(STORAGE_INSUMOS)) || [];
     sales = JSON.parse(localStorage.getItem(STORAGE_SALES)) || [];
     suppliers = JSON.parse(localStorage.getItem(STORAGE_SUPPLIERS)) || [];
+    products = JSON.parse(localStorage.getItem(STORAGE_PRODUCTS)) || [];
 }
 
 // Save Data to LocalStorage
@@ -29,6 +32,7 @@ function saveData() {
     localStorage.setItem(STORAGE_INSUMOS, JSON.stringify(insumos));
     localStorage.setItem(STORAGE_SALES, JSON.stringify(sales));
     localStorage.setItem(STORAGE_SUPPLIERS, JSON.stringify(suppliers));
+    localStorage.setItem(STORAGE_PRODUCTS, JSON.stringify(products));
     renderAll();
 }
 
@@ -46,6 +50,12 @@ function seedInitialData() {
             { id: 2, name: 'PETG Transparente 3D Fila', type: 'Filamento PETG', supplierId: 1, qty: 150, minQty: 300, cost: 110.00 }
         ];
     }
+    if (products.length === 0) {
+        products = [
+            { id: 1, name: 'Suporte de Headset Desk', category: 'Acessórios Tech', insumoId: 1, weight: 110, hours: 4.5, price: 45.00 },
+            { id: 2, name: 'Vasinho Geométrico', category: 'Decoração', insumoId: 1, weight: 75, hours: 3.0, price: 35.00 }
+        ];
+    }
     saveData();
 }
 
@@ -60,9 +70,11 @@ function switchTab(tabId) {
     const titles = {
         'dashboard': 'Dashboard Geral',
         'inventory': 'Controle de Estoque e Insumos',
+        'products': 'Catálogo de Produtos Cadastrados',
         'calculator': 'Calculadora de Custos 3D',
         'sales': 'Gestão de Vendas & Pedidos',
-        'suppliers': 'Cadastro de Fornecedores'
+        'suppliers': 'Cadastro de Fornecedores',
+        'backup': 'Backup e Restauração de Dados'
     };
     document.getElementById('page-title').innerText = titles[tabId];
 }
@@ -71,6 +83,7 @@ function switchTab(tabId) {
 function renderAll() {
     renderDashboard();
     renderInsumos();
+    renderProducts();
     renderSales();
     renderSuppliers();
     populateSelects();
@@ -137,6 +150,27 @@ function renderInsumos() {
     }).join('') || '<tr><td colspan="7">Nenhum insumo cadastrado.</td></tr>';
 }
 
+function renderProducts() {
+    const tbody = document.getElementById('table-products');
+    tbody.innerHTML = products.map(p => {
+        const insumoName = insumos.find(i => i.id == p.insumoId)?.name || 'N/A';
+
+        return `
+            <tr>
+                <td><strong>${p.name}</strong></td>
+                <td>${p.category}</td>
+                <td>${insumoName}</td>
+                <td>${p.weight} g</td>
+                <td>${p.hours} h</td>
+                <td><strong style="color: var(--primary);">${formatCurrency(p.price)}</strong></td>
+                <td>
+                    <button class="btn-danger-sm" onclick="deleteProduct(${p.id})"><i data-lucide="trash-2"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join('') || '<tr><td colspan="7">Nenhum produto cadastrado no catálogo.</td></tr>';
+}
+
 function renderSales() {
     const tbody = document.getElementById('table-sales');
     tbody.innerHTML = [...sales].reverse().map(s => {
@@ -175,14 +209,21 @@ function renderSuppliers() {
 }
 
 function populateSelects() {
-    const insumoSelects = [document.getElementById('calc-insumo'), document.getElementById('sale-insumo')];
+    const calcInsumo = document.getElementById('calc-insumo');
+    const saleInsumo = document.getElementById('sale-insumo');
+    const productInsumo = document.getElementById('product-insumo');
     const supplierSelect = document.getElementById('insumo-supplier');
+    const saleProductSelect = document.getElementById('sale-product-select');
 
     const insumoOptions = insumos.map(i => `<option value="${i.id}">${i.name} (Disponível: ${i.qty}g)</option>`).join('');
     const supplierOptions = suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    const productOptions = '<option value="">-- Venda Avulsa / Personalizada --</option>' + products.map(p => `<option value="${p.id}">${p.name} - ${formatCurrency(p.price)}</option>`).join('');
 
-    insumoSelects.forEach(sel => { if(sel) sel.innerHTML = insumoOptions; });
-    if(supplierSelect) supplierSelect.innerHTML = supplierOptions;
+    if (calcInsumo) calcInsumo.innerHTML = insumoOptions;
+    if (saleInsumo) saleInsumo.innerHTML = insumoOptions;
+    if (productInsumo) productInsumo.innerHTML = insumoOptions;
+    if (supplierSelect) supplierSelect.innerHTML = supplierOptions;
+    if (saleProductSelect) saleProductSelect.innerHTML = productOptions;
 }
 
 // 3D Printing Cost Calculator logic
@@ -213,6 +254,21 @@ function calculatePrintCost() {
     document.getElementById('res-final-price').innerText = formatCurrency(finalPrice);
 }
 
+// Auto Fill Sale Details when a Product is selected
+function autoFillSaleFromProduct() {
+    const prodId = document.getElementById('sale-product-select').value;
+    if (!prodId) return;
+
+    const prod = products.find(p => p.id == prodId);
+    if (prod) {
+        document.getElementById('sale-item').value = prod.name;
+        document.getElementById('sale-insumo').value = prod.insumoId;
+        document.getElementById('sale-weight').value = prod.weight;
+        document.getElementById('sale-price').value = prod.price;
+        updateSaleCost();
+    }
+}
+
 // Form Handlers & Stock Updates
 function handleSaveInsumo(e) {
     e.preventDefault();
@@ -230,6 +286,24 @@ function handleSaveInsumo(e) {
     saveData();
     closeModal('modal-insumo');
     document.getElementById('form-insumo').reset();
+}
+
+function handleSaveProduct(e) {
+    e.preventDefault();
+    const newProduct = {
+        id: Date.now(),
+        name: document.getElementById('product-name').value,
+        category: document.getElementById('product-category').value,
+        insumoId: parseInt(document.getElementById('product-insumo').value),
+        weight: parseFloat(document.getElementById('product-weight').value),
+        hours: parseFloat(document.getElementById('product-hours').value),
+        price: parseFloat(document.getElementById('product-price').value)
+    };
+
+    products.push(newProduct);
+    saveData();
+    closeModal('modal-product');
+    document.getElementById('form-product').reset();
 }
 
 function handleSaveSale(e) {
@@ -306,6 +380,13 @@ function deleteInsumo(id) {
     }
 }
 
+function deleteProduct(id) {
+    if (confirm('Tem certeza que deseja excluir este produto do catálogo?')) {
+        products = products.filter(p => p.id !== id);
+        saveData();
+    }
+}
+
 function deleteSale(id) {
     if (confirm('Tem certeza que deseja remover esta venda?')) {
         sales = sales.filter(s => s.id !== id);
@@ -318,6 +399,50 @@ function deleteSupplier(id) {
         suppliers = suppliers.filter(s => s.id !== id);
         saveData();
     }
+}
+
+// Backup & Import/Export JSON Logic
+function exportDataJSON() {
+    const backupData = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        insumos: insumos,
+        products: products,
+        suppliers: suppliers,
+        sales: sales
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `navora3d_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+}
+
+function importDataJSON(event) {
+    const fileReader = new FileReader();
+    fileReader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            if (importedData.insumos && importedData.sales && importedData.suppliers && importedData.products) {
+                if (confirm('Deseja substituir todos os seus dados atuais pelo arquivo de backup selecionado?')) {
+                    insumos = importedData.insumos;
+                    products = importedData.products;
+                    suppliers = importedData.suppliers;
+                    sales = importedData.sales;
+                    saveData();
+                    alert('Backup restaurado com sucesso!');
+                }
+            } else {
+                alert('O arquivo selecionado não contém uma estrutura de backup válida do Navora 3D.');
+            }
+        } catch (err) {
+            alert('Erro ao ler o arquivo JSON de backup.');
+        }
+    };
+    fileReader.readAsText(event.target.files[0]);
 }
 
 // Modal Helpers

@@ -3,457 +3,450 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navora 3D - Gestão Inteligente</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Navora 3D - Sistema de Gestão</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- FontAwesome para Ícones Modernos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <!-- TELA DE LOGIN -->
     <div id="login-screen" class="login-container">
         <div class="login-card">
-            <div class="login-header">
-                <div class="logo-box">
-                    <svg class="logo-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#00d2ff"/>
-                                <stop offset="100%" stop-color="#0055ff"/>
-                            </linearGradient>
-                        </defs>
-                        <!-- Símbolo N Navora 3D -->
-                        <path d="M 160 50 L 160 180 A 10 10 0 0 0 170 190 L 190 190 A 10 10 0 0 0 200 180 L 200 160 L 250 195 A 10 10 0 0 0 265 190 L 265 60 A 10 10 0 0 0 255 50 L 245 50 A 10 10 0 0 0 235 60 L 235 130 L 185 95 A 10 10 0 0 0 170 100 L 170 60 A 10 10 0 0 0 160 50 Z" fill="url(#blueGrad)"/>
-                        <path d="M 180 140 L 225 172 A 5 5 0 0 0 232 168 L 232 158 A 5 5 0 0 0 228 154 L 183 122 A 5 5 0 0 0 176 126 L 176 136 A 5 5 0 0 0 180 140 Z" fill="url(#blueGrad)"/>
-                    </svg>
-                </div>
+            <div class="brand-header">
+                <div class="logo-icon"><i class="fa-solid fa-cube"></i></div>
                 <h1>NAVORA 3D</h1>
-                <p>Sistema de Gestão & Controle</p>
+                <p class="slogan">Sua ideia em três dimensões.</p>
             </div>
-            <form id="login-form" onsubmit="handleLogin(event)">
-                <div class="input-group">
-                    <label for="username"><i class="fa-solid fa-user"></i> Usuário</label>
-                    <input type="text" id="username" autocomplete="username" required placeholder="Digite seu usuário">
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-user"><i class="fa-solid fa-user"></i> Usuário</label>
+                    <input type="text" id="login-user" placeholder="Digite seu usuário" required>
                 </div>
-                <div class="input-group">
-                    <label for="password"><i class="fa-solid fa-lock"></i> Senha</label>
-                    <input type="password" id="password" autocomplete="current-password" required placeholder="Digite sua senha">
+                <div class="form-group">
+                    <label for="login-pass"><i class="fa-solid fa-lock"></i> Senha</label>
+                    <input type="password" id="login-pass" placeholder="Digite sua senha" required>
                 </div>
-                <button type="submit" class="btn-primary btn-block">
+                <div id="login-error" class="error-message hidden">
+                    <i class="fa-solid fa-circle-exclamation"></i> Usuário ou senha incorretos!
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar no Sistema
                 </button>
-                <div id="login-error" class="error-msg"></div>
             </form>
         </div>
     </div>
 
-    <!-- APLICAÇÃO PRINCIPAL -->
-    <div id="app-container" class="app-layout hidden">
-        
-        <!-- BARRA LATERAL (MENU) -->
+    <!-- ESTRUTURA PRINCIPAL DO SISTEMA -->
+    <div id="app-container" class="app-container hidden">
+        <!-- SIDEBAR / MENU LATERAL -->
         <aside class="sidebar">
             <div class="sidebar-brand">
-                <svg class="sidebar-logo-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="blueGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#00d2ff"/>
-                            <stop offset="100%" stop-color="#0055ff"/>
-                        </linearGradient>
-                    </defs>
-                    <path d="M 160 50 L 160 180 A 10 10 0 0 0 170 190 L 190 190 A 10 10 0 0 0 200 180 L 200 160 L 250 195 A 10 10 0 0 0 265 190 L 265 60 A 10 10 0 0 0 255 50 L 245 50 A 10 10 0 0 0 235 60 L 235 130 L 185 95 A 10 10 0 0 0 170 100 L 170 60 A 10 10 0 0 0 160 50 Z" fill="url(#blueGrad2)"/>
-                    <path d="M 180 140 L 225 172 A 5 5 0 0 0 232 168 L 232 158 A 5 5 0 0 0 228 154 L 183 122 A 5 5 0 0 0 176 126 L 176 136 A 5 5 0 0 0 180 140 Z" fill="url(#blueGrad2)"/>
-                </svg>
-                <span class="brand-text">NAVORA <span>3D</span></span>
+                <i class="fa-solid fa-cube logo-3d"></i>
+                <div class="brand-titles">
+                    <h2>NAVORA 3D</h2>
+                    <span>GESTAO INTEGRADA</span>
+                </div>
             </div>
+            
             <nav class="sidebar-nav">
-                <button class="nav-btn active" data-module="dashboard" onclick="switchModule('dashboard')">
-                    <i class="fa-solid fa-chart-pie"></i> Dashboard
-                </button>
-                <button class="nav-btn" data-module="cadastros" onclick="switchModule('cadastros')">
-                    <i class="fa-solid fa-address-book"></i> Cadastros
-                </button>
-                <button class="nav-btn" data-module="produtos" onclick="switchModule('produtos')">
-                    <i class="fa-solid fa-boxes-stacked"></i> Produtos
-                </button>
-                <button class="nav-btn" data-module="estoque" onclick="switchModule('estoque')">
-                    <i class="fa-solid fa-warehouse"></i> Estoque
-                </button>
-                <button class="nav-btn" data-module="suprimentos" onclick="switchModule('suprimentos')">
-                    <i class="fa-solid fa-cart-flatbed"></i> Suprimentos
-                </button>
-                <button class="nav-btn" data-module="vendas" onclick="switchModule('vendas')">
-                    <i class="fa-solid fa-cash-register"></i> Vendas
-                </button>
-                <button class="nav-btn" data-module="financeiro" onclick="switchModule('financeiro')">
-                    <i class="fa-solid fa-chart-line"></i> Financeiro
-                </button>
+                <button class="nav-btn active" data-target="dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</button>
+                <button class="nav-btn" data-target="cadastros"><i class="fa-solid fa-address-book"></i> Cadastros</button>
+                <button class="nav-btn" data-target="produtos"><i class="fa-solid fa-boxes-stacked"></i> Produtos</button>
+                <button class="nav-btn" data-target="estoque"><i class="fa-solid fa-warehouse"></i> Estoque</button>
+                <button class="nav-btn" data-target="suprimentos"><i class="fa-solid fa-layer-group"></i> Suprimentos</button>
+                <button class="nav-btn" data-target="vendas"><i class="fa-solid fa-cart-shopping"></i> Vendas</button>
+                <button class="nav-btn" data-target="financeiro"><i class="fa-solid fa-wallet"></i> Financeiro</button>
             </nav>
+
             <div class="sidebar-footer">
-                <button class="nav-btn" data-module="logs" onclick="switchModule('logs')">
-                    <i class="fa-solid fa-clipboard-list"></i> Logs do Sistema
-                </button>
+                <button id="btn-logs" class="btn btn-secondary btn-sm btn-block"><i class="fa-solid fa-list-check"></i> Logs do Sistema</button>
             </div>
         </aside>
 
-        <!-- CONTEÚDO PRINCIPAL -->
+        <!-- ÁREA PRINCIPAL -->
         <main class="main-content">
-            
-            <!-- TOPO / HEADER -->
-            <header class="top-header">
-                <div class="user-info">
-                    <i class="fa-solid fa-circle-user"></i>
-                    <div>
-                        <span id="logged-user-name">Usuário Logado</span>
-                        <small>Administrador</small>
-                    </div>
+            <!-- TOPBAR / CABEÇALHO -->
+            <header class="topbar">
+                <div class="slogan-badge">
+                    <i class="fa-solid fa-sparkles"></i> Sua ideia em três dimensões.
                 </div>
-                <div class="header-actions">
-                    <button class="btn-secondary" onclick="exportBackup()" title="Baixar Backup JSON">
-                        <i class="fa-solid fa-download"></i> Backup JSON
-                    </button>
-                    <label class="btn-secondary file-upload-label" title="Restaurar Backup JSON">
-                        <i class="fa-solid fa-upload"></i> Restaurar
-                        <input type="file" id="import-file" accept=".json" onchange="importBackup(event)" style="display: none;">
-                    </label>
-                    <button class="btn-danger" onclick="handleLogout()" title="Sair do Sistema">
-                        <i class="fa-solid fa-right-from-bracket"></i> Sair
-                    </button>
+                
+                <div class="topbar-actions">
+                    <div class="backup-controls">
+                        <button id="btn-export-json" class="btn btn-outline btn-sm" title="Exportar Backup JSON">
+                            <i class="fa-solid fa-download"></i> Backup
+                        </button>
+                        <label for="import-json-file" class="btn btn-outline btn-sm" title="Restaurar Backup JSON">
+                            <i class="fa-solid fa-upload"></i> Restaurar
+                        </label>
+                        <input type="file" id="import-json-file" accept=".json" class="hidden">
+                    </div>
+
+                    <div class="user-profile">
+                        <i class="fa-solid fa-circle-user avatar"></i>
+                        <div class="user-info">
+                            <span id="logged-user-name">Usuário</span>
+                            <small>Administrador</small>
+                        </div>
+                        <button id="btn-logout" class="btn-logout" title="Deslogar"><i class="fa-solid fa-right-from-bracket"></i></button>
+                    </div>
                 </div>
             </header>
 
-            <!-- MÓDULO: DASHBOARD -->
-            <section id="module-dashboard" class="module-section active">
-                <h2>Dashboard Geral</h2>
-                <div class="cards-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-blue"><i class="fa-solid fa-dollar-sign"></i></div>
-                        <div class="stat-info">
-                            <h3>Faturamento Total</h3>
-                            <p id="dash-faturamento">R$ 0,00</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon bg-green"><i class="fa-solid fa-chart-pie"></i></div>
-                        <div class="stat-info">
-                            <h3>Lucro Estimado</h3>
-                            <p id="dash-lucro">R$ 0,00</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon bg-purple"><i class="fa-solid fa-bag-shopping"></i></div>
-                        <div class="stat-info">
-                            <h3>Total de Vendas</h3>
-                            <p id="dash-total-vendas">0</p>
-                        </div>
-                    </div>
-                </div>
+            <!-- CONTEÚDO DINÂMICO DOS MÓDULOS -->
+            <div class="content-wrapper">
 
-                <div class="content-card mt-20">
-                    <h3>Últimas Vendas Realizadas</h3>
+                <!-- 1. MÓDULO DASHBOARD -->
+                <section id="module-dashboard" class="module-section active">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-chart-pie"></i> Dashboard Geral</h2>
+                        <p>Visão geral dos resultados da Navora 3D</p>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-icon blue"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                            <div class="metric-data">
+                                <span>Faturamento Total</span>
+                                <h3 id="dash-faturamento">R$ 0,00</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                            <div class="metric-data">
+                                <span>Lucro Estimado</span>
+                                <h3 id="dash-lucro">R$ 0,00</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon dark-blue"><i class="fa-solid fa-receipt"></i></div>
+                            <div class="metric-data">
+                                <span>Total de Vendas</span>
+                                <h3 id="dash-qtd-vendas">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow mt-4">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-clock-rotate-left"></i> Últimas Vendas Realizadas</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                               <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Cliente</th>
+                                        <th>Produto</th>
+                                        <th>Valor</th>
+                                        <th>Lucro Est.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-ultimas-vendas">
+                                    <!-- Preenchido via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. MÓDULO CADASTROS -->
+                <section id="module-cadastros" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-address-book"></i> Central de Cadastros</h2>
+                        <p>Gerencie Clientes, Fornecedores, Categorias e Materiais</p>
+                    </div>
+
+                    <div class="tabs-header">
+                        <button class="tab-btn active" data-tab="tab-clientes">Clientes</button>
+                        <button class="tab-btn" data-tab="tab-fornecedores">Fornecedores</button>
+                        <button class="tab-btn" data-tab="tab-categorias">Categorias</button>
+                        <button class="tab-btn" data-tab="tab-materiais">Materiais</button>
+                    </div>
+
+                    <!-- TAB CLIENTES -->
+                    <div id="tab-clientes" class="tab-content active">
+                        <div class="toolbar">
+                            <button class="btn btn-primary" onclick="openModal('modal-cliente')"><i class="fa-solid fa-plus"></i> Novo Cliente</button>
+                            <input type="text" class="filter-input" placeholder="Filtrar clientes..." onkeyup="filterTable('tbl-clientes', this.value)">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="tbl-clientes">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Telefone/WhatsApp</th>
+                                        <th>E-mail</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="body-clientes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB FORNECEDORES -->
+                    <div id="tab-fornecedores" class="tab-content">
+                        <div class="toolbar">
+                            <button class="btn btn-primary" onclick="openModal('modal-fornecedor')"><i class="fa-solid fa-plus"></i> Novo Fornecedor</button>
+                            <input type="text" class="filter-input" placeholder="Filtrar fornecedores..." onkeyup="filterTable('tbl-fornecedores', this.value)">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="tbl-fornecedores">
+                                <thead>
+                                    <tr>
+                                        <th>Nome / Razão Social</th>
+                                        <th>Contato</th>
+                                        <th>Observação</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="body-fornecedores"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB CATEGORIAS -->
+                    <div id="tab-categorias" class="tab-content">
+                        <div class="toolbar">
+                            <button class="btn btn-primary" onclick="openModal('modal-categoria')"><i class="fa-solid fa-plus"></i> Nova Categoria</button>
+                            <input type="text" class="filter-input" placeholder="Filtrar categorias..." onkeyup="filterTable('tbl-categorias', this.value)">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="tbl-categorias">
+                                <thead>
+                                    <tr>
+                                        <th>Nome da Categoria</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="body-categorias"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB MATERIAIS -->
+                    <div id="tab-materiais" class="tab-content">
+                        <div class="toolbar">
+                            <button class="btn btn-primary" onclick="openModal('modal-material')"><i class="fa-solid fa-plus"></i> Novo Material</button>
+                            <input type="text" class="filter-input" placeholder="Filtrar materiais..." onkeyup="filterTable('tbl-materiais', this.value)">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="tbl-materiais">
+                                <thead>
+                                    <tr>
+                                        <th>Nome do Material (ex: PLA, PETG, ABS)</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="body-materiais"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. MÓDULO PRODUTOS -->
+                <section id="module-produtos" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-boxes-stacked"></i> Catálogo de Produtos</h2>
+                        <p>Cadastre modelos e itens oferecidos pela Navora 3D</p>
+                    </div>
+
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="openModal('modal-produto')"><i class="fa-solid fa-plus"></i> Novo Produto</button>
+                        <input type="text" class="filter-input" placeholder="Filtrar produtos..." onkeyup="filterTable('tbl-produtos', this.value)">
+                    </div>
+
                     <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Cliente</th>
-                                    <th>Produto</th>
-                                    <th>Valor</th>
-                                    <th>Lucro Est.</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dash-last-sales-table">
-                                <!-- Preenchido via JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- MÓDULO: CADASTROS -->
-            <section id="module-cadastros" class="module-section">
-                <h2>Cadastros Gerais</h2>
-                <div class="tabs-container">
-                    <div class="sub-tabs">
-                        <button class="sub-tab-btn active" onclick="switchCadastroTab(event, 'clientes')">Clientes</button>
-                        <button class="sub-tab-btn" onclick="switchCadastroTab(event, 'fornecedores')">Fornecedores</button>
-                        <button class="sub-tab-btn" onclick="switchCadastroTab(event, 'categorias')">Categorias</button>
-                        <button class="sub-tab-btn" onclick="switchCadastroTab(event, 'materiais')">Materiais</button>
-                    </div>
-
-                    <!-- Clientes -->
-                    <div id="cad-tab-clientes" class="sub-tab-content active">
-                        <div class="form-container">
-                            <h3 id="form-cliente-title">Novo Cliente</h3>
-                            <form id="form-cliente" onsubmit="saveCliente(event)">
-                                <input type="hidden" id="cliente-id">
-                                <div class="form-row">
-                                    <div class="input-group"><label>Nome</label><input type="text" id="cliente-nome" required placeholder="Nome completo ou razão social"></div>
-                                    <div class="input-group"><label>Telefone</label><input type="text" id="cliente-tel" placeholder="(00) 00000-0000"></div>
-                                    <div class="input-group"><label>E-mail</label><input type="email" id="cliente-email" placeholder="cliente@email.com"></div>
-                                </div>
-                                <div class="form-actions">
-                                    <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar Cliente</button>
-                                    <button type="button" class="btn-secondary" onclick="resetClienteForm()">Cancelar</button>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="content-card mt-20">
-                            <h3>Clientes Cadastrados</h3>
-                            <div class="table-responsive">
-                                <table>
-                                    <thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Ações</th></tr></thead>
-                                    <tbody id="table-clientes-body"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Fornecedores -->
-                    <div id="cad-tab-fornecedores" class="sub-tab-content">
-                        <div class="form-container">
-                            <h3 id="form-fornecedor-title">Novo Fornecedor</h3>
-                            <form id="form-fornecedor" onsubmit="saveFornecedor(event)">
-                                <input type="hidden" id="fornecedor-id">
-                                <div class="form-row">
-                                    <div class="input-group"><label>Nome da Empresa / Fornecedor</label><input type="text" id="fornecedor-nome" required></div>
-                                    <div class="input-group"><label>Contato</label><input type="text" id="fornecedor-contato"></div>
-                                    <div class="input-group"><label>Telefone</label><input type="text" id="fornecedor-tel"></div>
-                                </div>
-                                <div class="form-actions">
-                                    <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar Fornecedor</button>
-                                    <button type="button" class="btn-secondary" onclick="resetFornecedorForm()">Cancelar</button>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="content-card mt-20">
-                            <h3>Fornecedores Cadastrados</h3>
-                            <div class="table-responsive">
-                                <table>
-                                    <thead><tr><th>Nome</th><th>Contato</th><th>Telefone</th><th>Ações</th></tr></thead>
-                                    <tbody id="table-fornecedores-body"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Categorias -->
-                    <div id="cad-tab-categorias" class="sub-tab-content">
-                        <div class="form-container">
-                            <h3 id="form-categoria-title">Nova Categoria</h3>
-                            <form id="form-categoria" onsubmit="saveCategoria(event)">
-                                <input type="hidden" id="categoria-id">
-                                <div class="form-row">
-                                    <div class="input-group"><label>Nome da Categoria</label><input type="text" id="categoria-nome" required placeholder="Ex: Action Figures, Utilidades, Protótipos"></div>
-                                </div>
-                                <div class="form-actions">
-                                    <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar Categoria</button>
-                                    <button type="button" class="btn-secondary" onclick="resetCategoriaForm()">Cancelar</button>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="content-card mt-20">
-                            <h3>Categorias Cadastradas</h3>
-                            <div class="table-responsive">
-                                <table>
-                                    <thead><tr><th>Nome</th><th>Ações</th></tr></thead>
-                                    <tbody id="table-categorias-body"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Materiais -->
-                    <div id="cad-tab-materiais" class="sub-tab-content">
-                        <div class="form-container">
-                            <h3 id="form-material-title">Novo Material</h3>
-                            <form id="form-material" onsubmit="saveMaterial(event)">
-                                <input type="hidden" id="material-id">
-                                <div class="form-row">
-                                    <div class="input-group"><label>Nome do Material</label><input type="text" id="material-nome" required placeholder="Ex: PLA, PETG, ABS, Resina UV"></div>
-                                </div>
-                                <div class="form-actions">
-                                    <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar Material</button>
-                                    <button type="button" class="btn-secondary" onclick="resetMaterialForm()">Cancelar</button>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="content-card mt-20">
-                            <h3>Materiais Cadastrados</h3>
-                            <div class="table-responsive">
-                                <table>
-                                    <thead><tr><th>Nome</th><th>Ações</th></tr></thead>
-                                    <tbody id="table-materiais-body"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </section>
-
-            <!-- MÓDULO: PRODUTOS -->
-            <section id="module-produtos" class="module-section">
-                <h2>Gerenciamento de Produtos</h2>
-                <div class="form-container">
-                    <h3 id="form-produto-title">Cadastrar Novo Produto</h3>
-                    <form id="form-produto" onsubmit="saveProduto(event)">
-                        <input type="hidden" id="produto-id">
-                        <div class="form-row">
-                            <div class="input-group"><label>Descrição do Produto</label><input type="text" id="produto-descricao" required placeholder="Ex: Suporte de Headset V2"></div>
-                            <div class="input-group"><label>Categoria</label><select id="produto-categoria" required></select></div>
-                            <div class="input-group"><label>Material</label><select id="produto-material" required></select></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="input-group"><label>Fornecedor</label><select id="produto-fornecedor" required></select></div>
-                            <div class="input-group"><label>Preço de Venda Sugerido (R$)</label><input type="number" step="0.01" id="produto-preco" placeholder="0.00"></div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar Produto</button>
-                            <button type="button" class="btn-secondary" onclick="resetProdutoForm()">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="content-card mt-20">
-                    <h3>Produtos Cadastrados</h3>
-                    <div class="table-responsive">
-                        <table>
+                        <table class="data-table" id="tbl-produtos">
                             <thead>
                                 <tr>
                                     <th>Descrição</th>
                                     <th>Categoria</th>
-                                    <th>Material</th>
+                                    <th>Material Padrão</th>
                                     <th>Fornecedor</th>
                                     <th>Preço Sugerido</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-produtos-body"></tbody>
+                            <tbody id="body-produtos"></tbody>
                         </table>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- MÓDULO: ESTOQUE -->
-            <section id="module-estoque" class="module-section">
-                <h2>Controle de Estoque</h2>
-                
-                <div class="filter-box">
-                    <div class="input-group"><label>Filtrar por Produto</label><input type="text" id="filtro-estoque-prod" oninput="renderEstoque()" placeholder="Buscar produto..."></div>
-                    <div class="input-group"><label>Filtrar por Fornecedor</label><select id="filtro-estoque-forn" onchange="renderEstoque()"><option value="">Todos os Fornecedores</option></select></div>
-                </div>
+                <!-- 4. MÓDULO ESTOQUE -->
+                <section id="module-estoque" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-warehouse"></i> Controle de Estoque</h2>
+                        <p>Acompanhe a quantidade disponível e faça ajustes de produtos</p>
+                    </div>
 
-                <div class="content-card mt-20">
-                    <h3>Situação do Estoque</h3>
+                    <div class="toolbar filters-bar">
+                        <input type="text" id="filtro-estoque-prod" class="filter-input" placeholder="Filtrar por Produto..." onkeyup="filtrarEstoque()">
+                        <select id="filtro-estoque-forn" class="filter-input" onchange="filtrarEstoque()">
+                            <option value="">Todos os Fornecedores</option>
+                        </select>
+                        <select id="filtro-estoque-status" class="filter-input" onchange="filtrarEstoque()">
+                            <option value="">Todas as Situações</option>
+                            <option value="ok">Estoque Normal (> 0)</option>
+                            <option value="zero">Sem Estoque (0)</option>
+                        </select>
+                    </div>
+
                     <div class="table-responsive">
-                        <table>
+                        <table class="data-table" id="tbl-estoque">
                             <thead>
                                 <tr>
                                     <th>Produto</th>
-                                    <th>Quantidade Atual</th>
+                                    <th>Fornecedor</th>
+                                    <th>Qtd em Estoque</th>
                                     <th>Situação</th>
-                                    <th>Último Fornecedor</th>
-                                    <th>Valor Unit. Sugerido</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-estoque-body"></tbody>
+                            <tbody id="body-estoque"></tbody>
                         </table>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- MÓDULO: SUPRIMENTOS -->
-            <section id="module-suprimentos" class="module-section">
-                <h2>Cadastro de Suprimentos (Matéria-prima)</h2>
-                <div class="form-container">
-                    <h3 id="form-suprimento-title">Novo Suprimento</h3>
-                    <form id="form-suprimento" onsubmit="saveSuprimento(event)">
-                        <input type="hidden" id="suprimento-id">
-                        <div class="form-row">
-                            <div class="input-group"><label>Descrição</label><input type="text" id="sup-descricao" required placeholder="Ex: Filamento PLA Preto 1kg"></div>
-                            <div class="input-group"><label>Tipo</label>
-                                <select id="sup-tipo" required>
-                                    <option value="Filamento">Filamento</option>
-                                    <option value="Componente">Componente</option>
-                                    <option value="Outros">Outros</option>
-                                </select>
-                            </div>
-                            <div class="input-group"><label>Fornecedor</label><select id="sup-fornecedor" required></select></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="input-group"><label>Quantidade</label><input type="number" step="0.01" id="sup-qtd" required oninput="calcSupTotal()"></div>
-                            <div class="input-group"><label>Alerta Qtd Mínima</label><input type="number" step="0.01" id="sup-min" required></div>
-                            <div class="input-group"><label>Valor (R$)</label><input type="number" step="0.01" id="sup-valor" required oninput="calcSupTotal()"></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="input-group"><label>Frete (R$)</label><input type="number" step="0.01" id="sup-frete" value="0" oninput="calcSupTotal()"></div>
-                            <div class="input-group"><label>Outros (R$)</label><input type="number" step="0.01" id="sup-outros" value="0" oninput="calcSupTotal()"></div>
-                            <div class="input-group"><label>Total (R$)</label><input type="text" id="sup-total" readonly class="input-readonly"></div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar Suprimento</button>
-                            <button type="button" class="btn-secondary" onclick="resetSuprimentoForm()">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="content-card mt-20">
-                    <h3>Suprimentos Cadastrados</h3>
+                <!-- 5. MÓDULO SUPRIMENTOS -->
+                <section id="module-suprimentos" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-layer-group"></i> Suprimentos e Matéria-Prima</h2>
+                        <p>Filamentos, resinas, componentes e insumos de produção</p>
+                    </div>
+
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="openModal('modal-suprimento')"><i class="fa-solid fa-plus"></i> Novo Suprimento</button>
+                        <input type="text" class="filter-input" placeholder="Filtrar suprimentos..." onkeyup="filterTable('tbl-suprimentos', this.value)">
+                    </div>
+
                     <div class="table-responsive">
-                        <table>
+                        <table class="data-table" id="tbl-suprimentos">
                             <thead>
                                 <tr>
                                     <th>Descrição</th>
                                     <th>Tipo</th>
                                     <th>Fornecedor</th>
-                                    <th>Qtd</th>
-                                    <th>Mín</th>
-                                    <th>Valor Total</th>
+                                    <th>Qtd Atual</th>
+                                    <th>Qtd Mín.</th>
+                                    <th>Valor</th>
+                                    <th>Frete</th>
+                                    <th>Outros</th>
+                                    <th>Total (R$)</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-suprimentos-body"></tbody>
+                            <tbody id="body-suprimentos"></tbody>
                         </table>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- MÓDULO: VENDAS -->
-            <section id="module-vendas" class="module-section">
-                <h2>Lançamento de Vendas</h2>
-                <div class="form-container">
-                    <h3 id="form-venda-title">Nova Venda</h3>
-                    <form id="form-venda" onsubmit="saveVenda(event)">
-                        <input type="hidden" id="venda-id">
-                        <div class="form-row">
-                            <div class="input-group"><label>Cliente</label><select id="venda-cliente" required></select></div>
-                            <div class="input-group"><label>Produto</label><select id="venda-produto" required></select></div>
-                            <div class="input-group"><label>Quantidade</label><input type="number" id="venda-qtd" value="1" min="1" required oninput="calcVendaTotal()"></div>
+                <!-- 6. MÓDULO VENDAS -->
+                <section id="module-vendas" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-cart-shopping"></i> Registrar Venda</h2>
+                        <p>Lance novas encomendas e pedidos de impressão</p>
+                    </div>
+
+                    <div class="card p-4 shadow">
+                        <form id="form-venda">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="venda-cliente">Cliente *</label>
+                                    <select id="venda-cliente" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-produto">Produto *</label>
+                                    <select id="venda-produto" onchange="autopreencherValorProduto()" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-quantidade">Quantidade *</label>
+                                    <input type="number" id="venda-quantidade" value="1" min="1" oninput="calcularValorFinalVenda()" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-material">Material Utilizado *</label>
+                                    <select id="venda-material" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-gramas">Gramas Utilizadas (g) *</label>
+                                    <input type="number" id="venda-gramas" placeholder="Ex: 150" min="0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-cores">Cores Utilizadas (separadas por vírgula) *</label>
+                                    <input type="text" id="venda-cores" placeholder="Ex: Azul, Preto, Branco" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-tempo">Tempo de Criação / Impressão *</label>
+                                    <input type="text" id="venda-tempo" placeholder="Ex: 4h 30min" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-valor-unit">Valor Unitário (R$) *</label>
+                                    <input type="number" step="0.01" id="venda-valor-unit" placeholder="0.00" oninput="calcularValorFinalVenda()" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-desconto">Desconto (%)</label>
+                                    <input type="number" step="0.1" id="venda-desconto" value="0" min="0" max="100" oninput="calcularValorFinalVenda()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-valor-final">Valor Final Calculado (R$)</label>
+                                    <input type="number" step="0.01" id="venda-valor-final" readonly class="highlight-input">
+                                </div>
+                            </div>
+
+                            <div class="form-group mt-3">
+                                <label for="venda-obs">Observações do Pedido</label>
+                                <textarea id="venda-obs" rows="2" placeholder="Detalhes da impressão, fatiamento, especificações..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-success btn-lg mt-3">
+                                <i class="fa-solid fa-check"></i> Finalizar e Registrar Venda
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- 7. MÓDULO FINANCEIRO -->
+                <section id="module-financeiro" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-wallet"></i> Histórico Financeiro</h2>
+                        <p>Consulte relatórios, vendas realizadas e exporte comprovantes em PDF</p>
+                    </div>
+
+                    <div class="card p-3 mb-4 shadow">
+                        <h4><i class="fa-solid fa-filter"></i> Filtros Avançados</h4>
+                        <div class="form-grid mt-2">
+                            <div class="form-group">
+                                <label>Período Inicial</label>
+                                <input type="date" id="fin-data-inicio" onchange="filtrarFinanceiro()">
+                            </div>
+                            <div class="form-group">
+                                <label>Período Final</label>
+                                <input type="date" id="fin-data-fim" onchange="filtrarFinanceiro()">
+                            </div>
+                            <div class="form-group">
+                                <label>Cliente</label>
+                                <select id="fin-cliente" onchange="filtrarFinanceiro()">
+                                    <option value="">Todos os Clientes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Produto</label>
+                                <select id="fin-produto" onchange="filtrarFinanceiro()">
+                                    <option value="">Todos os Produtos</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-row">
-                            <div class="input-group"><label>Material</label><select id="venda-material" required></select></div>
-                            <div class="input-group"><label>Gramas (g)</label><input type="number" step="0.1" id="venda-gramas" required placeholder="Ex: 150"></div>
-                            <div class="input-group"><label>Cores (permite múltiplas)</label><input type="text" id="venda-cores" placeholder="Ex: Preto e Azul" required></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="input-group"><label>Tempo de Criação / Impressão</label><input type="text" id="venda-tempo" placeholder="Ex: 5h 20min" required></div>
-                            <div class="input-group"><label>Valor Unitário (R$)</label><input type="number" step="0.01" id="venda-valor" required oninput="calcVendaTotal()"></div>
-                            <div class="input-group"><label>Desconto (%)</label><input type="number" step="0.01" id="venda-desconto" value="0" oninput="calcVendaTotal()"></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="input-group"><label>Valor Final (R$)</label><input type="text" id="venda-final" readonly class="input-readonly"></div>
-                            <div class="input-group" style="grid-column: span 2;"><label>Observação</label><input type="text" id="venda-obs" placeholder="Detalhes ou personalizações do pedido"></div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Concluir Venda</button>
-                            <button type="button" class="btn-secondary" onclick="resetVendaForm()">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="content-card mt-20">
-                    <h3>Vendas Registradas</h3>
+                    </div>
+
                     <div class="table-responsive">
-                        <table>
+                        <table class="data-table" id="tbl-financeiro">
                             <thead>
                                 <tr>
+                                    <th>ID Venda</th>
                                     <th>Data</th>
                                     <th>Cliente</th>
                                     <th>Produto</th>
@@ -462,104 +455,281 @@
                                     <th>Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-vendas-body"></tbody>
+                            <tbody id="body-financeiro"></tbody>
                         </table>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- MÓDULO: FINANCEIRO -->
-            <section id="module-financeiro" class="module-section">
-                <h2>Módulo Financeiro & Relatórios</h2>
-                
-                <div class="filter-box">
-                    <div class="input-group"><label>Data Início</label><input type="date" id="filt-fin-inicio" onchange="renderFinanceiro()"></div>
-                    <div class="input-group"><label>Data Fim</label><input type="date" id="filt-fin-fim" onchange="renderFinanceiro()"></div>
-                    <div class="input-group"><label>Cliente</label><select id="filt-fin-cliente" onchange="renderFinanceiro()"><option value="">Todos os Clientes</option></select></div>
-                    <div class="input-group"><label>Produto</label><select id="filt-fin-produto" onchange="renderFinanceiro()"><option value="">Todos os Produtos</option></select></div>
-                </div>
-
-                <div class="cards-grid mt-20">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-blue"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-                        <div class="stat-info">
-                            <h3>Faturamento Filtrado</h3>
-                            <p id="fin-faturamento">R$ 0,00</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon bg-green"><i class="fa-solid fa-piggy-bank"></i></div>
-                        <div class="stat-info">
-                            <h3>Lucro Estimado Filtrado</h3>
-                            <p id="fin-lucro">R$ 0,00</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="content-card mt-20">
-                    <h3>Histórico Completo de Vendas</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Cliente</th>
-                                    <th>Produto</th>
-                                    <th>Qtd</th>
-                                    <th>Valor Final</th>
-                                    <th>Ações / Exportar PDF</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-financeiro-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- MÓDULO: LOGS -->
-            <section id="module-logs" class="module-section">
-                <h2>Logs de Auditoria do Sistema</h2>
-                <div class="content-card mt-20">
-                    <p style="margin-bottom: 15px; color: #94a3b8;">Registro de segurança de todas as operações de inserção, alteração e exclusão realizadas no sistema.</p>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Data / Hora</th>
-                                    <th>Usuário</th>
-                                    <th>Ação</th>
-                                    <th>Detalhes da Operação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-logs-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
+            </div>
         </main>
     </div>
 
-    <!-- MODAL DE IMPRESSÃO / PDF -->
-    <div id="print-modal" class="modal hidden">
-        <div class="modal-content">
-            <div id="print-area">
-                <div class="print-header">
-                    <h2>NAVORA 3D - Impressão e Design</h2>
-                    <p id="print-data-emissao"></p>
-                </div>
-                <hr style="margin: 15px 0; border: 0; border-top: 1px solid #0055ff;">
-                <div id="print-body-content">
-                    <!-- Preenchido via JS -->
-                </div>
+    <!-- MODAIS DE CADASTRO / EDIÇÃO -->
+
+    <!-- Modal Cliente -->
+    <div id="modal-cliente" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-cliente-title">Novo Cliente</h3>
+                <button class="close-btn" onclick="closeModal('modal-cliente')">&times;</button>
             </div>
-            <div class="form-actions mt-20">
-                <button type="button" class="btn-primary" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / Salvar em PDF</button>
-                <button type="button" class="btn-secondary" onclick="closePrintModal()">Fechar</button>
+            <form id="form-cliente">
+                <input type="hidden" id="cli-id">
+                <div class="form-group">
+                    <label>Nome Completo *</label>
+                    <input type="text" id="cli-nome" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefone / WhatsApp</label>
+                    <input type="text" id="cli-telefone">
+                </div>
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="cli-email">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-cliente')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Fornecedor -->
+    <div id="modal-fornecedor" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-fornecedor-title">Novo Fornecedor</h3>
+                <button class="close-btn" onclick="closeModal('modal-fornecedor')">&times;</button>
+            </div>
+            <form id="form-fornecedor">
+                <input type="hidden" id="forn-id">
+                <div class="form-group">
+                    <label>Nome / Razão Social *</label>
+                    <input type="text" id="forn-nome" required>
+                </div>
+                <div class="form-group">
+                    <label>Contato / Telefone</label>
+                    <input type="text" id="forn-contato">
+                </div>
+                <div class="form-group">
+                    <label>Observação</label>
+                    <input type="text" id="forn-obs">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-fornecedor')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Categoria -->
+    <div id="modal-categoria" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-categoria-title">Nova Categoria</h3>
+                <button class="close-btn" onclick="closeModal('modal-categoria')">&times;</button>
+            </div>
+            <form id="form-categoria">
+                <input type="hidden" id="cat-id">
+                <div class="form-group">
+                    <label>Nome da Categoria *</label>
+                    <input type="text" id="cat-nome" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-categoria')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Material -->
+    <div id="modal-material" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-material-title">Novo Material</h3>
+                <button class="close-btn" onclick="closeModal('modal-material')">&times;</button>
+            </div>
+            <form id="form-material">
+                <input type="hidden" id="mat-id">
+                <div class="form-group">
+                    <label>Descrição do Material *</label>
+                    <input type="text" id="mat-nome" placeholder="Ex: PLA, PETG, Resina ABS-Like" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-material')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Produto -->
+    <div id="modal-produto" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-produto-title">Novo Produto</h3>
+                <button class="close-btn" onclick="closeModal('modal-produto')">&times;</button>
+            </div>
+            <form id="form-produto">
+                <input type="hidden" id="prod-id">
+                <div class="form-group">
+                    <label>Descrição do Produto *</label>
+                    <input type="text" id="prod-descricao" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoria *</label>
+                    <select id="prod-categoria" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Material *</label>
+                    <select id="prod-material" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Fornecedor *</label>
+                    <select id="prod-fornecedor" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Preço de Venda Sugerido (R$)</label>
+                    <input type="number" step="0.01" id="prod-preco" placeholder="Opcional">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-produto')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ajuste de Estoque -->
+    <div id="modal-ajuste-estoque" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Ajustar Quantidade em Estoque</h3>
+                <button class="close-btn" onclick="closeModal('modal-ajuste-estoque')">&times;</button>
+            </div>
+            <form id="form-ajuste-estoque">
+                <input type="hidden" id="est-prod-id">
+                <div class="form-group">
+                    <label>Produto</label>
+                    <input type="text" id="est-prod-nome" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Nova Quantidade *</label>
+                    <input type="number" id="est-prod-qtd" min="0" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-ajuste-estoque')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Atualizar Estoque</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Suprimentos -->
+    <div id="modal-suprimento" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-suprimento-title">Novo Suprimento</h3>
+                <button class="close-btn" onclick="closeModal('modal-suprimento')">&times;</button>
+            </div>
+            <form id="form-suprimento">
+                <input type="hidden" id="sup-id">
+                <div class="form-group">
+                    <label>Descrição *</label>
+                    <input type="text" id="sup-descricao" placeholder="Ex: Filamento PLA Azul 1kg" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo *</label>
+                    <select id="sup-tipo" required>
+                        <option value="Filamento">Filamento</option>
+                        <option value="Componente">Componente</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fornecedor *</label>
+                    <select id="sup-fornecedor" required></select>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Quantidade *</label>
+                        <input type="number" id="sup-qtd" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Alerta Qtd Mínima *</label>
+                        <input type="number" id="sup-qtd-min" min="0" required>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Valor (R$) *</label>
+                        <input type="number" step="0.01" id="sup-valor" placeholder="0.00" oninput="calcularTotalSuprimento()" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Frete (R$)</label>
+                        <input type="number" step="0.01" id="sup-frete" value="0" oninput="calcularTotalSuprimento()">
+                    </div>
+                    <div class="form-group">
+                        <label>Outros (R$)</label>
+                        <input type="number" step="0.01" id="sup-outros" value="0" oninput="calcularTotalSuprimento()">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Custo Total Calculado (R$)</label>
+                    <input type="number" step="0.01" id="sup-total" readonly class="highlight-input">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-suprimento')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Logs -->
+    <div id="modal-logs" class="modal-overlay">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-list-check"></i> Logs de Auditoria do Sistema</h3>
+                <button class="close-btn" onclick="closeModal('modal-logs')">&times;</button>
+            </div>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Usuário</th>
+                            <th>Ação</th>
+                            <th>Detalhes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-logs"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-logs')">Fechar</button>
             </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- ÁREA OCULTA APENAS PARA IMPRESSÃO DE COMPROVANTE PDF DE VENDA -->
+    <div id="print-receipt" class="print-receipt-container">
+        <div class="receipt-header">
+            <h2>NAVORA 3D</h2>
+            <p>Sua ideia em três dimensões.</p>
+            <hr>
+            <h3>COMPROVANTE DE VENDA / IMPRESSÃO 3D</h3>
+        </div>
+        <div id="receipt-body"></div>
+        <div class="receipt-footer">
+            <hr>
+            <p>Obrigado por escolher a Navora 3D!</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>

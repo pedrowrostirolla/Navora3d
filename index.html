@@ -3,537 +3,541 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navora 3D - Sistema de Gestão</title>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="styles.css">
+    <title>Navora 3D - Gestão Inteligente</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="logo-icon"><i data-lucide="box"></i></div>
-                <div class="brand-text">
-                    <h2>NAVORA <span>3D</span></h2>
-                    <small>Gestão de Impressão</small>
-                </div>
-            </div>
 
-            <nav class="nav-menu">
-                <button class="nav-btn active" onclick="switchTab('dashboard')">
-                    <i data-lucide="layout-dashboard"></i> Dashboard
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-placeholder">
+                    <i class="fa-solid fa-cube fa-2x"></i>
+                </div>
+                <h1>Navora 3D</h1>
+                <p>Controle e Gestão de Impressão 3D</p>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label for="username"><i class="fa-solid fa-user"></i> Usuário</label>
+                    <input type="text" id="username" required placeholder="Digite seu usuário">
+                </div>
+                <div class="input-group">
+                    <label for="password"><i class="fa-solid fa-lock"></i> Senha</label>
+                    <input type="password" id="password" required placeholder="Digite sua senha">
+                </div>
+                <button type="submit" class="btn-primary">Entrar no Sistema</button>
+                <div id="login-error" class="error-msg"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- APLICAÇÃO PRINCIPAL -->
+    <div id="app-container" class="app-layout hidden">
+        
+        <!-- BARRA LATERAL (MENU) -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-cube"></i>
+                <span>Navora 3D</span>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" onclick="switchModule('dashboard')">
+                    <i class="fa-solid fa-chart-pie"></i> Dashboard
                 </button>
-                <button class="nav-btn" onclick="switchTab('inventory')">
-                    <i data-lucide="layers"></i> Estoque & Insumos
+                <button class="nav-btn" onclick="switchModule('cadastros')">
+                    <i class="fa-solid fa-address-book"></i> Cadastros
                 </button>
-                <button class="nav-btn" onclick="switchTab('products')">
-                    <i data-lucide="package"></i> Catálogo de Produtos
+                <button class="nav-btn" onclick="switchModule('produtos')">
+                    <i class="fa-solid fa-boxes-stacked"></i> Produtos
                 </button>
-                <button class="nav-btn" onclick="switchTab('calculator')">
-                    <i data-lucide="calculator"></i> Calculadora 3D
+                <button class="nav-btn" onclick="switchModule('estoque')">
+                    <i class="fa-solid fa-warehouse"></i> Estoque
                 </button>
-                <button class="nav-btn" onclick="switchTab('sales')">
-                    <i data-lucide="shopping-cart"></i> Vendas & Pedidos
+                <button class="nav-btn" onclick="switchModule('suprimentos')">
+                    <i class="fa-solid fa-cart-flatbed"></i> Suprimentos
                 </button>
-                <button class="nav-btn" onclick="switchTab('suppliers')">
-                    <i data-lucide="truck"></i> Fornecedores
+                <button class="nav-btn" onclick="switchModule('vendas')">
+                    <i class="fa-solid fa-cash-register"></i> Vendas
                 </button>
-                <button class="nav-btn" onclick="switchTab('backup')">
-                    <i data-lucide="database"></i> Backup & Dados
+                <button class="nav-btn" onclick="switchModule('financeiro')">
+                    <i class="fa-solid fa-chart-line"></i> Financeiro
                 </button>
             </nav>
-
             <div class="sidebar-footer">
-                <p><i data-lucide="database"></i> Banco Local Ativo</p>
+                <button class="nav-btn" onclick="switchModule('logs')">
+                    <i class="fa-solid fa-clipboard-list"></i> Logs do Sistema
+                </button>
             </div>
         </aside>
 
-        <!-- Main Content Area -->
+        <!-- CONTEÚDO PRINCIPAL -->
         <main class="main-content">
-            <!-- Topbar Header -->
-            <header class="topbar">
-                <h1 id="page-title">Dashboard</h1>
-                <div class="quick-actions">
-                    <button class="btn btn-primary" onclick="openModal('modal-sale')">
-                        <i data-lucide="plus"></i> Nova Venda
+            
+            <!-- TOPO / HEADER -->
+            <header class="top-header">
+                <div class="user-info">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <div>
+                        <span id="logged-user-name">Usuário</span>
+                        <small>Administrador</small>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-secondary" onclick="exportBackup()" title="Baixar Backup JSON">
+                        <i class="fa-solid fa-download"></i> Backup
                     </button>
-                    <button class="btn btn-secondary" onclick="openModal('modal-product')">
-                        <i data-lucide="box"></i> Novo Produto
-                    </button>
-                    <button class="btn btn-secondary" onclick="openModal('modal-insumo')">
-                        <i data-lucide="package-plus"></i> Novo Insumo
+                    <label class="btn-secondary file-upload-label" title="Restaurar Backup JSON">
+                        <i class="fa-solid fa-upload"></i> Restaurar
+                        <input type="file" id="import-file" accept=".json" onchange="importBackup(event)" style="display: none;">
+                    </label>
+                    <button class="btn-danger" onclick="handleLogout()" title="Sair do Sistema">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair
                     </button>
                 </div>
             </header>
 
-            <!-- TAB: DASHBOARD -->
-            <section id="tab-dashboard" class="tab-content active">
-                <div class="stats-grid">
+            <!-- MÓDULO: DASHBOARD -->
+            <section id="module-dashboard" class="module-section active">
+                <h2>Dashboard Geral</h2>
+                <div class="cards-grid">
                     <div class="stat-card">
-                        <div class="stat-icon green"><i data-lucide="dollar-sign"></i></div>
+                        <div class="stat-icon bg-blue"><i class="fa-solid fa-dollar-sign"></i></div>
                         <div class="stat-info">
-                            <small>Faturamento Total</small>
-                            <h3 id="stat-revenue">R$ 0,00</h3>
+                            <h3>Faturamento Total</h3>
+                            <p id="dash-faturamento">R$ 0,00</p>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon blue"><i data-lucide="trending-up"></i></div>
+                        <div class="stat-icon bg-green"><i class="fa-solid fa-chart-pie"></i></div>
                         <div class="stat-info">
-                            <small>Lucro Estimado</small>
-                            <h3 id="stat-profit">R$ 0,00</h3>
+                            <h3>Lucro Estimado</h3>
+                            <p id="dash-lucro">R$ 0,00</p>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon purple"><i data-lucide="shopping-bag"></i></div>
+                        <div class="stat-icon bg-purple"><i class="fa-solid fa-bag-shopping"></i></div>
                         <div class="stat-info">
-                            <small>Total de Vendas</small>
-                            <h3 id="stat-sales-count">0</h3>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon orange"><i data-lucide="alert-triangle"></i></div>
-                        <div class="stat-info">
-                            <small>Estoque Baixo</small>
-                            <h3 id="stat-low-stock">0 itens</h3>
+                            <h3>Total de Vendas</h3>
+                            <p id="dash-total-vendas">0</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="dashboard-panels">
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h3><i data-lucide="clock"></i> Últimas Vendas</h3>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Cliente</th>
-                                        <th>Item</th>
-                                        <th>Valor Total</th>
-                                        <th>Lucro</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-recent-sales"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h3><i data-lucide="alert-circle"></i> Alertas de Insumos</h3>
-                        </div>
-                        <ul id="list-stock-alerts" class="alert-list"></ul>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB: ESTOQUE E INSUMOS -->
-            <section id="tab-inventory" class="tab-content">
-                <div class="panel">
-                    <div class="panel-header flex-between">
-                        <h3>Insumos Cadastrados (Filamentos, Resinas, Outros)</h3>
-                        <button class="btn btn-primary btn-sm" onclick="openModal('modal-insumo')">
-                            <i data-lucide="plus"></i> Cadastrar Insumo
-                        </button>
-                    </div>
+                <div class="content-card mt-20">
+                    <h3>Últimas Vendas</h3>
                     <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Nome do Material</th>
-                                    <th>Tipo</th>
-                                    <th>Fornecedor</th>
-                                    <th>Qtd. Disponível</th>
-                                    <th>Custo Unit./g</th>
-                                    <th>Status</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-insumos"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB: CATÁLOGO DE PRODUTOS -->
-            <section id="tab-products" class="tab-content">
-                <div class="panel">
-                    <div class="panel-header flex-between">
-                        <h3>Catálogo de Produtos / Peças 3D</h3>
-                        <button class="btn btn-primary btn-sm" onclick="openModal('modal-product')">
-                            <i data-lucide="plus"></i> Cadastrar Produto
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Nome do Produto</th>
-                                    <th>Categoria</th>
-                                    <th>Insumo Padrão</th>
-                                    <th>Peso Estimado (g)</th>
-                                    <th>Tempo Impressão (h)</th>
-                                    <th>Preço Sugerido</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-products"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB: CALCULADORA DE CUSTOS 3D -->
-            <section id="tab-calculator" class="tab-content">
-                <div class="calc-grid">
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h3><i data-lucide="cpu"></i> Calculadora de Preço de Impressão</h3>
-                        </div>
-                        <form id="form-calc" oninput="calculatePrintCost()">
-                            <div class="form-group">
-                                <label>Selecione o Insumo/Filamento</label>
-                                <select id="calc-insumo" required></select>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Peso Utilizado (gramas)</label>
-                                    <input type="number" id="calc-weight" value="100" step="1">
-                                </div>
-                                <div class="form-group">
-                                    <label>Tempo de Impressão (Horas)</label>
-                                    <input type="number" id="calc-hours" value="5" step="0.5">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Consumo Impressora (kW/h)</label>
-                                    <input type="number" id="calc-kw" value="0.15" step="0.01">
-                                </div>
-                                <div class="form-group">
-                                    <label>Tarifa de Energia (R$/kWh)</label>
-                                    <input type="number" id="calc-energy-price" value="0.85" step="0.01">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Taxa Depreciação/Falhas (R$/h)</label>
-                                    <input type="number" id="calc-wear" value="1.50" step="0.1">
-                                </div>
-                                <div class="form-group">
-                                    <label>Margem de Lucro Desejada (%)</label>
-                                    <input type="number" id="calc-margin" value="100" step="5">
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div class="panel calc-result-panel">
-                        <div class="panel-header">
-                            <h3>Resumo dos Custos</h3>
-                        </div>
-                        <div class="calc-breakdown">
-                            <div class="calc-item">
-                                <span>Custo do Material:</span>
-                                <strong id="res-material-cost">R$ 0,00</strong>
-                            </div>
-                            <div class="calc-item">
-                                <span>Custo de Energia:</span>
-                                <strong id="res-energy-cost">R$ 0,00</strong>
-                            </div>
-                            <div class="calc-item">
-                                <span>Depreciação & Manutenção:</span>
-                                <strong id="res-wear-cost">R$ 0,00</strong>
-                            </div>
-                            <hr>
-                            <div class="calc-item total">
-                                <span>Custo Total de Produção:</span>
-                                <strong id="res-total-cost">R$ 0,00</strong>
-                            </div>
-                            <div class="calc-item profit">
-                                <span>Lucro Calculado:</span>
-                                <strong id="res-profit-value">R$ 0,00</strong>
-                            </div>
-                            <div class="price-tag">
-                                <small>Preço Final Sugerido</small>
-                                <h2 id="res-final-price">R$ 0,00</h2>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB: VENDAS E PEDIDOS -->
-            <section id="tab-sales" class="tab-content">
-                <div class="panel">
-                    <div class="panel-header flex-between">
-                        <h3>Histórico de Vendas</h3>
-                        <button class="btn btn-primary btn-sm" onclick="openModal('modal-sale')">
-                            <i data-lucide="plus"></i> Registrar Venda
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table">
+                        <table>
                             <thead>
                                 <tr>
                                     <th>Data</th>
                                     <th>Cliente</th>
-                                    <th>Descrição / Item</th>
-                                    <th>Material Usado</th>
-                                    <th>Qtd. Usada</th>
-                                    <th>Custo Produção</th>
-                                    <th>Preço Venda</th>
+                                    <th>Produto</th>
+                                    <th>Valor</th>
                                     <th>Lucro</th>
-                                    <th>Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-sales"></tbody>
+                            <tbody id="dash-last-sales-table">
+                                <!-- Preenchido via JS -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- TAB: FORNECEDORES -->
-            <section id="tab-suppliers" class="tab-content">
-                <div class="panel">
-                    <div class="panel-header flex-between">
-                        <h3>Fornecedores Cadastrados</h3>
-                        <button class="btn btn-primary btn-sm" onclick="openModal('modal-supplier')">
-                            <i data-lucide="plus"></i> Novo Fornecedor
-                        </button>
+            <!-- MÓDULO: CADASTROS -->
+            <section id="module-cadastros" class="module-section">
+                <h2>Cadastros Gerais</h2>
+                <div class="tabs-container">
+                    <div class="sub-tabs">
+                        <button class="sub-tab-btn active" onclick="switchCadastroTab('clientes')">Clientes</button>
+                        <button class="sub-tab-btn" onclick="switchCadastroTab('fornecedores')">Fornecedores</button>
+                        <button class="sub-tab-btn" onclick="switchCadastroTab('categorias')">Categorias</button>
+                        <button class="sub-tab-btn" onclick="switchCadastroTab('materiais')">Materiais</button>
                     </div>
+
+                    <!-- Clientes -->
+                    <div id="cad-tab-clientes" class="sub-tab-content active">
+                        <div class="form-container">
+                            <h3 id="form-cliente-title">Novo Cliente</h3>
+                            <form id="form-cliente" onsubmit="saveCliente(event)">
+                                <input type="hidden" id="cliente-id">
+                                <div class="form-row">
+                                    <div class="input-group"><label>Nome</label><input type="text" id="cliente-nome" required></div>
+                                    <div class="input-group"><label>Telefone</label><input type="text" id="cliente-tel"></div>
+                                    <div class="input-group"><label>E-mail</label><input type="email" id="cliente-email"></div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">Salvar Cliente</button>
+                                    <button type="button" class="btn-secondary" onclick="resetClienteForm()">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="content-card mt-20">
+                            <h3>Clientes Cadastrados</h3>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Ações</th></tr></thead>
+                                    <tbody id="table-clientes-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fornecedores -->
+                    <div id="cad-tab-fornecedores" class="sub-tab-content">
+                        <div class="form-container">
+                            <h3 id="form-fornecedor-title">Novo Fornecedor</h3>
+                            <form id="form-fornecedor" onsubmit="saveFornecedor(event)">
+                                <input type="hidden" id="fornecedor-id">
+                                <div class="form-row">
+                                    <div class="input-group"><label>Nome da Empresa / Fornecedor</label><input type="text" id="fornecedor-nome" required></div>
+                                    <div class="input-group"><label>Contato</label><input type="text" id="fornecedor-contato"></div>
+                                    <div class="input-group"><label>Telefone</label><input type="text" id="fornecedor-tel"></div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">Salvar Fornecedor</button>
+                                    <button type="button" class="btn-secondary" onclick="resetFornecedorForm()">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="content-card mt-20">
+                            <h3>Fornecedores Cadastrados</h3>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead><tr><th>Nome</th><th>Contato</th><th>Telefone</th><th>Ações</th></tr></thead>
+                                    <tbody id="table-fornecedores-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Categorias -->
+                    <div id="cad-tab-categorias" class="sub-tab-content">
+                        <div class="form-container">
+                            <h3 id="form-categoria-title">Nova Categoria</h3>
+                            <form id="form-categoria" onsubmit="saveCategoria(event)">
+                                <input type="hidden" id="categoria-id">
+                                <div class="form-row">
+                                    <div class="input-group"><label>Nome da Categoria</label><input type="text" id="categoria-nome" required></div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">Salvar Categoria</button>
+                                    <button type="button" class="btn-secondary" onclick="resetCategoriaForm()">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="content-card mt-20">
+                            <h3>Categorias Cadastradas</h3>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead><tr><th>Nome</th><th>Ações</th></tr></thead>
+                                    <tbody id="table-categorias-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Materiais -->
+                    <div id="cad-tab-materiais" class="sub-tab-content">
+                        <div class="form-container">
+                            <h3 id="form-material-title">Novo Material</h3>
+                            <form id="form-material" onsubmit="saveMaterial(event)">
+                                <input type="hidden" id="material-id">
+                                <div class="form-row">
+                                    <div class="input-group"><label>Nome do Material (ex: PLA, PETG, ABS)</label><input type="text" id="material-nome" required></div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">Salvar Material</button>
+                                    <button type="button" class="btn-secondary" onclick="resetMaterialForm()">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="content-card mt-20">
+                            <h3>Materiais Cadastrados</h3>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead><tr><th>Nome</th><th>Ações</th></tr></thead>
+                                    <tbody id="table-materiais-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- MÓDULO: PRODUTOS -->
+            <section id="module-produtos" class="module-section">
+                <h2>Gerenciamento de Produtos</h2>
+                <div class="form-container">
+                    <h3 id="form-produto-title">Cadastrar Novo Produto</h3>
+                    <form id="form-produto" onsubmit="saveProduto(event)">
+                        <input type="hidden" id="produto-id">
+                        <div class="form-row">
+                            <div class="input-group"><label>Descrição do Produto</label><input type="text" id="produto-descricao" required></div>
+                            <div class="input-group"><label>Categoria</label><select id="produto-categoria" required></select></div>
+                            <div class="input-group"><label>Material</label><select id="produto-material" required></select></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group"><label>Fornecedor</label><select id="produto-fornecedor" required></select></div>
+                            <div class="input-group"><label>Preço de Venda Sugerido (R$)</label><input type="number" step="0.01" id="produto-preco"></div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Salvar Produto</button>
+                            <button type="button" class="btn-secondary" onclick="resetProdutoForm()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="content-card mt-20">
+                    <h3>Produtos Cadastrados</h3>
                     <div class="table-responsive">
-                        <table class="data-table">
+                        <table>
                             <thead>
                                 <tr>
-                                    <th>Empresa / Fornecedor</th>
-                                    <th>Contato / Vendedor</th>
-                                    <th>Telefone / WhatsApp</th>
-                                    <th>Insumos / Produtos</th>
+                                    <th>Descrição</th>
+                                    <th>Categoria</th>
+                                    <th>Material</th>
+                                    <th>Fornecedor</th>
+                                    <th>Preço Sugerido</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-suppliers"></tbody>
+                            <tbody id="table-produtos-body"></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- TAB: BACKUP & EXPORTAÇÃO -->
-            <section id="tab-backup" class="tab-content">
-                <div class="dashboard-panels" style="grid-template-columns: 1fr 1fr;">
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h3><i data-lucide="download"></i> Exportar Dados (Backup)</h3>
-                        </div>
-                        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
-                            Faça o download de todos os seus dados cadastrados (Insumos, Produtos, Fornecedores e Vendas) em um único arquivo JSON seguro.
-                        </p>
-                        <button class="btn btn-primary" onclick="exportDataJSON()">
-                            <i data-lucide="download"></i> Baixar Arquivo JSON Backup
-                        </button>
-                    </div>
+            <!-- MÓDULO: ESTOQUE -->
+            <section id="module-estoque" class="module-section">
+                <h2>Controle de Estoque</h2>
+                
+                <!-- Filtros Estoque -->
+                <div class="filter-box">
+                    <div class="input-group"><label>Filtrar por Produto</label><input type="text" id="filtro-estoque-prod" oninput="renderEstoque()" placeholder="Buscar produto..."></div>
+                    <div class="input-group"><label>Filtrar por Fornecedor</label><select id="filtro-estoque-forn" onchange="renderEstoque()"><option value="">Todos os Fornecedores</option></select></div>
+                </div>
 
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h3><i data-lucide="upload"></i> Importar Dados (Restaurar)</h3>
-                        </div>
-                        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
-                            Restaure um backup baixado anteriormente. <strong style="color: var(--orange);">Atenção:</strong> isso substituirá os dados atuais!
-                        </p>
-                        <input type="file" id="import-json-file" accept=".json" style="display: none;" onchange="importDataJSON(event)">
-                        <button class="btn btn-secondary" onclick="document.getElementById('import-json-file').click()">
-                            <i data-lucide="upload"></i> Selecionar Arquivo JSON
-                        </button>
+                <div class="content-card mt-20">
+                    <h3>Situação do Estoque</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Quantidade Atual</th>
+                                    <th>Situação</th>
+                                    <th>Último Fornecedor</th>
+                                    <th>Valor Unit. Médio</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-estoque-body"></tbody>
+                        </table>
                     </div>
                 </div>
             </section>
+
+            <!-- MÓDULO: SUPRIMENTOS -->
+            <section id="module-suprimentos" class="module-section">
+                <h2>Cadastro de Suprimentos (Matéria-prima)</h2>
+                <div class="form-container">
+                    <h3 id="form-suprimento-title">Novo Suprimento</h3>
+                    <form id="form-suprimento" onsubmit="saveSuprimento(event)">
+                        <input type="hidden" id="suprimento-id">
+                        <div class="form-row">
+                            <div class="input-group"><label>Descrição</label><input type="text" id="sup-descricao" required></div>
+                            <div class="input-group"><label>Tipo</label>
+                                <select id="sup-tipo" required>
+                                    <option value="Filamento">Filamento</option>
+                                    <option value="Componente">Componente</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div class="input-group"><label>Fornecedor</label><select id="sup-fornecedor" required></select></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group"><label>Quantidade</label><input type="number" step="0.01" id="sup-qtd" required oninput="calcSupTotal()"></div>
+                            <div class="input-group"><label>Alerta Qtd Mínima</label><input type="number" step="0.01" id="sup-min" required></div>
+                            <div class="input-group"><label>Valor (R$)</label><input type="number" step="0.01" id="sup-valor" required oninput="calcSupTotal()"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group"><label>Frete (R$)</label><input type="number" step="0.01" id="sup-frete" value="0" oninput="calcSupTotal()"></div>
+                            <div class="input-group"><label>Outros (R$)</label><input type="number" step="0.01" id="sup-outros" value="0" oninput="calcSupTotal()"></div>
+                            <div class="input-group"><label>Total (R$)</label><input type="text" id="sup-total" readonly style="background:#e2e8f0; font-weight:bold;"></div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Salvar Suprimento</button>
+                            <button type="button" class="btn-secondary" onclick="resetSuprimentoForm()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="content-card mt-20">
+                    <h3>Suprimentos Cadastrados</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Descrição</th>
+                                    <th>Tipo</th>
+                                    <th>Fornecedor</th>
+                                    <th>Qtd</th>
+                                    <th>Mín</th>
+                                    <th>Valor Total</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-suprimentos-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MÓDULO: VENDAS -->
+            <section id="module-vendas" class="module-section">
+                <h2>Lançamento de Vendas</h2>
+                <div class="form-container">
+                    <h3 id="form-venda-title">Nova Venda</h3>
+                    <form id="form-venda" onsubmit="saveVenda(event)">
+                        <input type="hidden" id="venda-id">
+                        <div class="form-row">
+                            <div class="input-group"><label>Cliente</label><select id="venda-cliente" required></select></div>
+                            <div class="input-group"><label>Produto</label><select id="venda-produto" required></select></div>
+                            <div class="input-group"><label>Quantidade</label><input type="number" id="venda-qtd" value="1" min="1" required oninput="calcVendaTotal()"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group"><label>Material</label><select id="venda-material" required></select></div>
+                            <div class="input-group"><label>Gramas (g)</label><input type="number" step="0.1" id="venda-gramas" required></div>
+                            <div class="input-group"><label>Cores (separe por vírgula)</label><input type="text" id="venda-cores" placeholder="Ex: Preto, Azul" required></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group"><label>Tempo de Criação / Impressão</label><input type="text" id="venda-tempo" placeholder="Ex: 4h 30min" required></div>
+                            <div class="input-group"><label>Valor Unitário (R$)</label><input type="number" step="0.01" id="venda-valor" required oninput="calcVendaTotal()"></div>
+                            <div class="input-group"><label>Desconto (%)</label><input type="number" step="0.01" id="venda-desconto" value="0" oninput="calcVendaTotal()"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group"><label>Valor Final (R$)</label><input type="text" id="venda-final" readonly style="background:#e2e8f0; font-weight:bold;"></div>
+                            <div class="input-group" style="grid-column: span 2;"><label>Observação</label><input type="text" id="venda-obs"></div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Concluir Venda</button>
+                            <button type="button" class="btn-secondary" onclick="resetVendaForm()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="content-card mt-20">
+                    <h3>Vendas Registradas</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Cliente</th>
+                                    <th>Produto</th>
+                                    <th>Qtd</th>
+                                    <th>Valor Final</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-vendas-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MÓDULO: FINANCEIRO -->
+            <section id="module-financeiro" class="module-section">
+                <h2>Módulo Financeiro & Vendas</h2>
+                
+                <!-- Filtros Financeiro -->
+                <div class="filter-box">
+                    <div class="input-group"><label>Data Início</label><input type="date" id="filt-fin-inicio" onchange="renderFinanceiro()"></div>
+                    <div class="input-group"><label>Data Fim</label><input type="date" id="filt-fin-fim" onchange="renderFinanceiro()"></div>
+                    <div class="input-group"><label>Cliente</label><select id="filt-fin-cliente" onchange="renderFinanceiro()"><option value="">Todos</option></select></div>
+                    <div class="input-group"><label>Produto</label><select id="filt-fin-produto" onchange="renderFinanceiro()"><option value="">Todos</option></select></div>
+                </div>
+
+                <div class="cards-grid mt-20">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-blue"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                        <div class="stat-info">
+                            <h3>Faturamento Filtrado</h3>
+                            <p id="fin-faturamento">R$ 0,00</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-green"><i class="fa-solid fa-piggy-bank"></i></div>
+                        <div class="stat-info">
+                            <h3>Lucro Estimado Filtrado</h3>
+                            <p id="fin-lucro">R$ 0,00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card mt-20">
+                    <h3>Histórico Completo de Vendas</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Cliente</th>
+                                    <th>Produto</th>
+                                    <th>Qtd</th>
+                                    <th>Valor Final</th>
+                                    <th>Ações / PDF</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-financeiro-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MÓDULO: LOGS -->
+            <section id="module-logs" class="module-section">
+                <h2>Logs de Auditoria do Sistema</h2>
+                <div class="content-card mt-20">
+                    <p style="margin-bottom: 15px; color: #64748b;">Registro de todas as ações de inserção, edição e exclusão realizadas pelos usuários.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data / Hora</th>
+                                    <th>Usuário</th>
+                                    <th>Ação</th>
+                                    <th>Detalhes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-logs-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 
-    <!-- MODAL: CADASTRAR INSUMO -->
-    <div class="modal" id="modal-insumo">
+    <!-- MODAL DE IMPRESSÃO / PDF -->
+    <div id="print-modal" class="modal hidden">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>Cadastrar Novo Insumo</h3>
-                <button class="close-btn" onclick="closeModal('modal-insumo')">&times;</button>
+            <div id="print-area">
+                <div class="print-header">
+                    <h2>Navora 3D - Resumo da Venda</h2>
+                    <p id="print-data-emissao"></p>
+                </div>
+                <hr style="margin: 15px 0; border: 0; border-top: 1px solid #cbd5e1;">
+                <div id="print-body-content">
+                    <!-- Preenchido via JS -->
+                </div>
             </div>
-            <form id="form-insumo" onsubmit="handleSaveInsumo(event)">
-                <div class="form-group">
-                    <label>Nome do Insumo (ex: PLA Preto eSUN)</label>
-                    <input type="text" id="insumo-name" required placeholder="Marca + Tipo + Cor">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Tipo</label>
-                        <select id="insumo-type" required>
-                            <option value="Filamento PLA">Filamento PLA</option>
-                            <option value="Filamento PETG">Filamento PETG</option>
-                            <option value="Filamento ABS">Filamento ABS</option>
-                            <option value="Resina UV">Resina UV</option>
-                            <option value="Insumo Geral">Outro / Ferragem / Embalagem</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Fornecedor</label>
-                        <select id="insumo-supplier" required></select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Quantidade Total (g ou un)</label>
-                        <input type="number" id="insumo-qty" required placeholder="Ex: 1000">
-                    </div>
-                    <div class="form-group">
-                        <label>Alerta de Qtd. Mínima</label>
-                        <input type="number" id="insumo-min" value="200" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Preço Pago no Rolo/Pacote (R$)</label>
-                    <input type="number" step="0.01" id="insumo-cost" required placeholder="Ex: 110.00">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-insumo')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar Insumo</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL: CADASTRAR PRODUTO -->
-    <div class="modal" id="modal-product">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Cadastrar Novo Produto / Peça 3D</h3>
-                <button class="close-btn" onclick="closeModal('modal-product')">&times;</button>
+            <div class="form-actions mt-20">
+                <button type="button" class="btn-primary" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / Salvar PDF</button>
+                <button type="button" class="btn-secondary" onclick="closePrintModal()">Fechar</button>
             </div>
-            <form id="form-product" onsubmit="handleSaveProduct(event)">
-                <div class="form-group">
-                    <label>Nome do Produto</label>
-                    <input type="text" id="product-name" required placeholder="Ex: Suporte de Headset Flex">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Categoria</label>
-                        <input type="text" id="product-category" required placeholder="Ex: Decorativos / Utilidades">
-                    </div>
-                    <div class="form-group">
-                        <label>Insumo Padrão</label>
-                        <select id="product-insumo" required></select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Peso Estimado (g)</label>
-                        <input type="number" id="product-weight" required placeholder="Ex: 120">
-                    </div>
-                    <div class="form-group">
-                        <label>Tempo Impressão (Horas)</label>
-                        <input type="number" step="0.1" id="product-hours" required placeholder="Ex: 4.5">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Preço de Venda Sugerido (R$)</label>
-                    <input type="number" step="0.01" id="product-price" required placeholder="Ex: 50.00">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-product')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar Produto</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL: REGISTRAR VENDA -->
-    <div class="modal" id="modal-sale">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Registrar Nova Venda</h3>
-                <button class="close-btn" onclick="closeModal('modal-sale')">&times;</button>
-            </div>
-            <form id="form-sale" onsubmit="handleSaveSale(event)">
-                <div class="form-group">
-                    <label>Selecionar do Catálogo (Opcional)</label>
-                    <select id="sale-product-select" onchange="autoFillSaleFromProduct()">
-                        <option value="">-- Venda Avulsa / Personalizada --</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Nome do Cliente</label>
-                        <input type="text" id="sale-customer" required placeholder="Ex: João Silva">
-                    </div>
-                    <div class="form-group">
-                        <label>Nome do Item / Projeto</label>
-                        <input type="text" id="sale-item" required placeholder="Ex: Suporte Headset Custom">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Insumo Utilizado</label>
-                        <select id="sale-insumo" required onchange="updateSaleCost()"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Gramas/Unidades Usadas</label>
-                        <input type="number" id="sale-weight" required placeholder="Ex: 85" oninput="updateSaleCost()">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Custo Adicional (Energia/Pós)</label>
-                        <input type="number" step="0.01" id="sale-extra-cost" value="0.00" oninput="updateSaleCost()">
-                    </div>
-                    <div class="form-group">
-                        <label>Preço Final de Venda (R$)</label>
-                        <input type="number" step="0.01" id="sale-price" required placeholder="Ex: 45.00">
-                    </div>
-                </div>
-                <div class="calc-breakdown-mini">
-                    <p>Custo Est. de Material: <strong id="sale-material-cost-display">R$ 0,00</strong></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-sale')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Concluir Venda & Dar Baixa</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL: CADASTRAR FORNECEDOR -->
-    <div class="modal" id="modal-supplier">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Cadastrar Fornecedor</h3>
-                <button class="close-btn" onclick="closeModal('modal-supplier')">&times;</button>
-            </div>
-            <form id="form-supplier" onsubmit="handleSaveSupplier(event)">
-                <div class="form-group">
-                    <label>Nome da Empresa / Marca</label>
-                    <input type="text" id="supplier-name" required placeholder="Ex: 3D Fila / Voolt3D">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Nome do Contato</label>
-                        <input type="text" id="supplier-contact" placeholder="Ex: Carlos Atendimento">
-                    </div>
-                    <div class="form-group">
-                        <label>Telefone / WhatsApp</label>
-                        <input type="text" id="supplier-phone" placeholder="Ex: (11) 99999-8888">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Tipos de Insumos Fornecidos</label>
-                    <input type="text" id="supplier-products" placeholder="Ex: Filamentos PLA, Bicos, Peças">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-supplier')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar Fornecedor</button>
-                </div>
-            </form>
         </div>
     </div>
 

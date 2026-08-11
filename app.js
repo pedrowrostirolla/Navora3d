@@ -1,460 +1,839 @@
-// Database Keys
-const STORAGE_INSUMOS = 'navora3d_insumos';
-const STORAGE_SALES = 'navora3d_sales';
-const STORAGE_SUPPLIERS = 'navora3d_suppliers';
-const STORAGE_PRODUCTS = 'navora3d_products';
+// BANCO DE DADOS LOCAL & ESTADO
+let db = {
+    currentUser: null,
+    users: [
+        { username: 'pedrorostirolla', password: 'Rds@2026!' },
+        { username: 'dudapaganini', password: 'Couve5flor*' }
+    ],
+    logs: [],
+    clientes: [],
+    fornecedores: [],
+    categorias: [],
+    materiais: [],
+    produtos: [],
+    suprimentos: [],
+    vendas: []
+};
 
-// State Management
-let insumos = [];
-let sales = [];
-let suppliers = [];
-let products = [];
-
-// Initialize App
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-    loadLocalStorageData();
-    seedInitialData();
-    renderAll();
-    calculatePrintCost();
+// INICIALIZAÇÃO
+window.addEventListener('DOMContentLoaded', () => {
+    loadDB();
+    checkSession();
 });
 
-// Load Data from LocalStorage
-function loadLocalStorageData() {
-    insumos = JSON.parse(localStorage.getItem(STORAGE_INSUMOS)) || [];
-    sales = JSON.parse(localStorage.getItem(STORAGE_SALES)) || [];
-    suppliers = JSON.parse(localStorage.getItem(STORAGE_SUPPLIERS)) || [];
-    products = JSON.parse(localStorage.getItem(STORAGE_PRODUCTS)) || [];
+function loadDB() {
+    const saved = localStorage.getItem('navora_db');
+    if (saved) {
+        try {
+            db = JSON.parse(saved);
+        } catch(e) {
+            console.error('Erro ao carregar banco de dados', e);
+        }
+    }
 }
 
-// Save Data to LocalStorage
-function saveData() {
-    localStorage.setItem(STORAGE_INSUMOS, JSON.stringify(insumos));
-    localStorage.setItem(STORAGE_SALES, JSON.stringify(sales));
-    localStorage.setItem(STORAGE_SUPPLIERS, JSON.stringify(suppliers));
-    localStorage.setItem(STORAGE_PRODUCTS, JSON.stringify(products));
-    renderAll();
+function saveDB() {
+    localStorage.setItem('navora_db', JSON.stringify(db));
 }
 
-// Seed Demo Data if Empty
-function seedInitialData() {
-    if (suppliers.length === 0) {
-        suppliers = [
-            { id: 1, name: '3D Fila', contact: 'Atendimento', phone: '(11) 98888-7777', products: 'PLA, PETG, ABS' },
-            { id: 2, name: 'eSUN Brasil', contact: 'Vendas', phone: '(11) 97777-6666', products: 'Filamentos Especiais, Resinas' }
-        ];
-    }
-    if (insumos.length === 0) {
-        insumos = [
-            { id: 1, name: 'PLA Preto eSUN', type: 'Filamento PLA', supplierId: 2, qty: 850, minQty: 200, cost: 120.00 },
-            { id: 2, name: 'PETG Transparente 3D Fila', type: 'Filamento PETG', supplierId: 1, qty: 150, minQty: 300, cost: 110.00 }
-        ];
-    }
-    if (products.length === 0) {
-        products = [
-            { id: 1, name: 'Suporte de Headset Desk', category: 'Acessórios Tech', insumoId: 1, weight: 110, hours: 4.5, price: 45.00 },
-            { id: 2, name: 'Vasinho Geométrico', category: 'Decoração', insumoId: 1, weight: 75, hours: 3.0, price: 35.00 }
-        ];
-    }
-    saveData();
+// LOGS DE AUDITORIA
+function addLog(action, details) {
+    const user = db.currentUser ? db.currentUser.username : 'sistema';
+    const timestamp = new Date().toLocaleString('pt-BR');
+    db.logs.unshift({ timestamp, user, action, details });
+    saveDB();
 }
 
-// Navigation Tabs Logic
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+// AUTENTICAÇÃO
+function handleLogin(e) {
+    e.preventDefault();
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value;
+    const errorEl = document.getElementById('login-error');
 
-    document.getElementById(`tab-${tabId}`).classList.add('active');
+    const found = db.users.find(x => x.username === u && x.password === p);
+    if (found) {
+        db.currentUser = found;
+        saveDB();
+        errorEl.textContent = '';
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app-container').classList.remove('hidden');
+        document.getElementById('logged-user-name').textContent = found.username;
+        addLog('LOGIN', `Usuário ${found.username} entrou no sistema.`);
+        initApp();
+    } else {
+        errorEl.textContent = 'Usuário ou senha inválidos!';
+    }
+}
+
+function handleLogout() {
+    if(db.currentUser) {
+        addLog('LOGOUT', `Usuário ${db.currentUser.username} saiu do sistema.`);
+    }
+    db.currentUser = null;
+    saveDB();
+    document.getElementById('app-container').classList.add('hidden');
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('login-form').reset();
+}
+
+function checkSession() {
+    if (db.currentUser) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app-container').classList.remove('hidden');
+        document.getElementById('logged-user-name').textContent = db.currentUser.username;
+        initApp();
+    }
+}
+
+// NAVEGAÇÃO DE MÓDULOS
+function switchModule(moduleName) {
+    document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active'));
+    document.querySelectorAll('.sidebar-nav .nav-btn, .sidebar-footer .nav-btn').forEach(btn => btn.classList.remove('active'));
+    
+    const targetSec = document.getElementById(`module-${moduleName}`);
+    if (targetSec) targetSec.classList.add('active');
+
     event.currentTarget.classList.add('active');
 
-    const titles = {
-        'dashboard': 'Dashboard Geral',
-        'inventory': 'Controle de Estoque e Insumos',
-        'products': 'Catálogo de Produtos Cadastrados',
-        'calculator': 'Calculadora de Custos 3D',
-        'sales': 'Gestão de Vendas & Pedidos',
-        'suppliers': 'Cadastro de Fornecedores',
-        'backup': 'Backup e Restauração de Dados'
-    };
-    document.getElementById('page-title').innerText = titles[tabId];
+    // Atualizar dados do módulo específico
+    if (moduleName === 'dashboard') renderDashboard();
+    if (moduleName === 'cadastros') renderCadastros();
+    if (moduleName === 'produtos') renderProdutos();
+    if (moduleName === 'estoque') renderEstoque();
+    if (moduleName === 'suprimentos') renderSuprimentos();
+    if (moduleName === 'vendas') renderVendas();
+    if (moduleName === 'financeiro') renderFinanceiro();
+    if (moduleName === 'logs') renderLogs();
 }
 
-// Render Functions
-function renderAll() {
+function initApp() {
     renderDashboard();
-    renderInsumos();
-    renderProducts();
-    renderSales();
-    renderSuppliers();
     populateSelects();
-    lucide.createIcons();
 }
 
-function renderDashboard() {
-    const totalRevenue = sales.reduce((sum, s) => sum + s.price, 0);
-    const totalProfit = sales.reduce((sum, s) => sum + (s.price - s.totalCost), 0);
-    const lowStockItems = insumos.filter(i => i.qty <= i.minQty);
+// POPULAR SELECTS GLOBAIS
+function populateSelects() {
+    // Clientes
+    const selCliente = document.getElementById('venda-cliente');
+    const filtFinCli = document.getElementById('filt-fin-cliente');
+    if(selCliente) selCliente.innerHTML = '<option value="">Selecione...</option>' + db.clientes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if(filtFinCli) filtFinCli.innerHTML = '<option value="">Todos</option>' + db.clientes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
-    document.getElementById('stat-revenue').innerText = formatCurrency(totalRevenue);
-    document.getElementById('stat-profit').innerText = formatCurrency(totalProfit);
-    document.getElementById('stat-sales-count').innerText = sales.length;
-    document.getElementById('stat-low-stock').innerText = `${lowStockItems.length} itens`;
+    // Fornecedores
+    const selForn = document.getElementById('produto-fornecedor');
+    const selSupForn = document.getElementById('sup-fornecedor');
+    const filtEstForn = document.getElementById('filtro-estoque-forn');
+    const fornOptions = '<option value="">Selecione...</option>' + db.fornecedores.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+    if(selForn) selForn.innerHTML = fornOptions;
+    if(selSupForn) selSupForn.innerHTML = fornOptions;
+    if(filtEstForn) filtEstForn.innerHTML = '<option value="">Todos os Fornecedores</option>' + db.fornecedores.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
 
-    // Table Recent Sales
-    const recentSales = [...sales].reverse().slice(0, 5);
-    const recentBody = document.getElementById('table-recent-sales');
-    recentBody.innerHTML = recentSales.map(s => `
+    // Categorias
+    const selCat = document.getElementById('produto-categoria');
+    if(selCat) selCat.innerHTML = '<option value="">Selecione...</option>' + db.categorias.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+
+    // Materiais
+    const selMat = document.getElementById('produto-material');
+    const selVendaMat = document.getElementById('venda-material');
+    const matOptions = '<option value="">Selecione...</option>' + db.materiais.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+    if(selMat) selMat.innerHTML = matOptions;
+    if(selVendaMat) selVendaMat.innerHTML = matOptions;
+
+    // Produtos
+    const selProd = document.getElementById('venda-produto');
+    const filtFinProd = document.getElementById('filt-fin-produto');
+    const prodOptions = '<option value="">Selecione...</option>' + db.produtos.map(p => `<option value="${p.id}">${p.description}</option>`).join('');
+    if(selProd) selProd.innerHTML = prodOptions;
+    if(filtFinProd) filtFinProd.innerHTML = '<option value="">Todos</option>' + db.produtos.map(p => `<option value="${p.id}">${p.description}</option>`).join('');
+}
+
+// ================= MÓDULO: CADASTROS =================
+function switchCadastroTab(tabName) {
+    document.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`cad-tab-${tabName}`).classList.add('active');
+    event.currentTarget.classList.add('active');
+    renderCadastros();
+}
+
+function renderCadastros() {
+    // Clientes
+    const tbCli = document.getElementById('table-clientes-body');
+    tbCli.innerHTML = db.clientes.map(c => `
         <tr>
-            <td>${s.date}</td>
-            <td>${s.customer}</td>
-            <td>${s.item}</td>
-            <td><strong>${formatCurrency(s.price)}</strong></td>
-            <td style="color: var(--green);">${formatCurrency(s.price - s.totalCost)}</td>
-        </tr>
-    `).join('') || '<tr><td colspan="5">Nenhuma venda registrada.</td></tr>';
-
-    // Stock Alert List
-    const alertList = document.getElementById('list-stock-alerts');
-    alertList.innerHTML = lowStockItems.map(i => `
-        <li class="alert-item">
-            <strong>${i.name}</strong> está com estoque baixo! <br>
-            Disponível: <strong>${i.qty}g</strong> (Mínimo: ${i.minQty}g)
-        </li>
-    `).join('') || '<p style="color: var(--text-muted); font-size: 0.85rem;">Todos os insumos estão em níveis adequados.</p>';
-}
-
-function renderInsumos() {
-    const tbody = document.getElementById('table-insumos');
-    tbody.innerHTML = insumos.map(i => {
-        const costPerGram = i.cost / 1000;
-        const supplierName = suppliers.find(s => s.id == i.supplierId)?.name || 'N/A';
-        const isLow = i.qty <= i.minQty;
-
-        return `
-            <tr>
-                <td><strong>${i.name}</strong></td>
-                <td>${i.type}</td>
-                <td>${supplierName}</td>
-                <td>${i.qty} g/un</td>
-                <td>${formatCurrency(costPerGram)}/g</td>
-                <td>
-                    <span class="badge ${isLow ? 'badge-warning' : 'badge-ok'}">
-                        ${isLow ? 'Estoque Baixo' : 'OK'}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn-danger-sm" onclick="deleteInsumo(${i.id})"><i data-lucide="trash-2"></i></button>
-                </td>
-            </tr>
-        `;
-    }).join('') || '<tr><td colspan="7">Nenhum insumo cadastrado.</td></tr>';
-}
-
-function renderProducts() {
-    const tbody = document.getElementById('table-products');
-    tbody.innerHTML = products.map(p => {
-        const insumoName = insumos.find(i => i.id == p.insumoId)?.name || 'N/A';
-
-        return `
-            <tr>
-                <td><strong>${p.name}</strong></td>
-                <td>${p.category}</td>
-                <td>${insumoName}</td>
-                <td>${p.weight} g</td>
-                <td>${p.hours} h</td>
-                <td><strong style="color: var(--primary);">${formatCurrency(p.price)}</strong></td>
-                <td>
-                    <button class="btn-danger-sm" onclick="deleteProduct(${p.id})"><i data-lucide="trash-2"></i></button>
-                </td>
-            </tr>
-        `;
-    }).join('') || '<tr><td colspan="7">Nenhum produto cadastrado no catálogo.</td></tr>';
-}
-
-function renderSales() {
-    const tbody = document.getElementById('table-sales');
-    tbody.innerHTML = [...sales].reverse().map(s => {
-        const profit = s.price - s.totalCost;
-        return `
-            <tr>
-                <td>${s.date}</td>
-                <td>${s.customer}</td>
-                <td><strong>${s.item}</strong></td>
-                <td>${s.insumoName}</td>
-                <td>${s.weight}g</td>
-                <td>${formatCurrency(s.totalCost)}</td>
-                <td>${formatCurrency(s.price)}</td>
-                <td style="color: var(--green); font-weight: bold;">${formatCurrency(profit)}</td>
-                <td>
-                    <button class="btn-danger-sm" onclick="deleteSale(${s.id})"><i data-lucide="trash-2"></i></button>
-                </td>
-            </tr>
-        `;
-    }).join('') || '<tr><td colspan="9">Nenhuma venda realizada.</td></tr>';
-}
-
-function renderSuppliers() {
-    const tbody = document.getElementById('table-suppliers');
-    tbody.innerHTML = suppliers.map(s => `
-        <tr>
-            <td><strong>${s.name}</strong></td>
-            <td>${s.contact || '-'}</td>
-            <td>${s.phone || '-'}</td>
-            <td>${s.products || '-'}</td>
+            <td>${c.name}</td>
+            <td>${c.phone || '-'}</td>
+            <td>${c.email || '-'}</td>
             <td>
-                <button class="btn-danger-sm" onclick="deleteSupplier(${s.id})"><i data-lucide="trash-2"></i></button>
+                <button class="btn-secondary" onclick="editCliente(${c.id})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-danger" onclick="deleteCliente(${c.id})"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>
-    `).join('') || '<tr><td colspan="5">Nenhum fornecedor cadastrado.</td></tr>';
+    `).join('');
+
+    // Fornecedores
+    const tbForn = document.getElementById('table-fornecedores-body');
+    tbForn.innerHTML = db.fornecedores.map(f => `
+        <tr>
+            <td>${f.name}</td>
+            <td>${f.contact || '-'}</td>
+            <td>${f.phone || '-'}</td>
+            <td>
+                <button class="btn-secondary" onclick="editFornecedor(${f.id})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-danger" onclick="deleteFornecedor(${f.id})"><i class="fa-solid fa-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
+
+    // Categorias
+    const tbCat = document.getElementById('table-categorias-body');
+    tbCat.innerHTML = db.categorias.map(cat => `
+        <tr>
+            <td>${cat.name}</td>
+            <td>
+                <button class="btn-secondary" onclick="editCategoria(${cat.id})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-danger" onclick="deleteCategoria(${cat.id})"><i class="fa-solid fa-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
+
+    // Materiais
+    const tbMat = document.getElementById('table-materiais-body');
+    tbMat.innerHTML = db.materiais.map(m => `
+        <tr>
+            <td>${m.name}</td>
+            <td>
+                <button class="btn-secondary" onclick="editMaterial(${m.id})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-danger" onclick="deleteMaterial(${m.id})"><i class="fa-solid fa-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
 }
 
-function populateSelects() {
-    const calcInsumo = document.getElementById('calc-insumo');
-    const saleInsumo = document.getElementById('sale-insumo');
-    const productInsumo = document.getElementById('product-insumo');
-    const supplierSelect = document.getElementById('insumo-supplier');
-    const saleProductSelect = document.getElementById('sale-product-select');
+// CRUD Clientes
+function saveCliente(e) {
+    e.preventDefault();
+    const id = document.getElementById('cliente-id').value;
+    const name = document.getElementById('cliente-nome').value;
+    const phone = document.getElementById('cliente-tel').value;
+    const email = document.getElementById('cliente-email').value;
 
-    const insumoOptions = insumos.map(i => `<option value="${i.id}">${i.name} (Disponível: ${i.qty}g)</option>`).join('');
-    const supplierOptions = suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-    const productOptions = '<option value="">-- Venda Avulsa / Personalizada --</option>' + products.map(p => `<option value="${p.id}">${p.name} - ${formatCurrency(p.price)}</option>`).join('');
-
-    if (calcInsumo) calcInsumo.innerHTML = insumoOptions;
-    if (saleInsumo) saleInsumo.innerHTML = insumoOptions;
-    if (productInsumo) productInsumo.innerHTML = insumoOptions;
-    if (supplierSelect) supplierSelect.innerHTML = supplierOptions;
-    if (saleProductSelect) saleProductSelect.innerHTML = productOptions;
+    if (id) {
+        const item = db.clientes.find(x => x.id == id);
+        item.name = name; item.phone = phone; item.email = email;
+        addLog('EDITAR', `Cliente editado: ${name}`);
+    } else {
+        const newId = Date.now();
+        db.clientes.push({ id: newId, name, phone, email });
+        addLog('INSERIR', `Novo cliente cadastrado: ${name}`);
+    }
+    saveDB(); resetClienteForm(); renderCadastros(); populateSelects();
+}
+function editCliente(id) {
+    const c = db.clientes.find(x => x.id == id);
+    document.getElementById('cliente-id').value = c.id;
+    document.getElementById('cliente-nome').value = c.name;
+    document.getElementById('cliente-tel').value = c.phone;
+    document.getElementById('cliente-email').value = c.email;
+    document.getElementById('form-cliente-title').textContent = 'Editar Cliente';
+}
+function deleteCliente(id) {
+    const c = db.clientes.find(x => x.id == id);
+    if(confirm('Deseja excluir este cliente?')) {
+        db.clientes = db.clientes.filter(x => x.id != id);
+        addLog('EXCLUIR', `Cliente excluído: ${c.name}`);
+        saveDB(); renderCadastros(); populateSelects();
+    }
+}
+function resetClienteForm() {
+    document.getElementById('form-cliente').reset();
+    document.getElementById('cliente-id').value = '';
+    document.getElementById('form-cliente-title').textContent = 'Novo Cliente';
 }
 
-// 3D Printing Cost Calculator logic
-function calculatePrintCost() {
-    const insumoId = document.getElementById('calc-insumo').value;
-    const weight = parseFloat(document.getElementById('calc-weight').value) || 0;
-    const hours = parseFloat(document.getElementById('calc-hours').value) || 0;
-    const kw = parseFloat(document.getElementById('calc-kw').value) || 0;
-    const energyPrice = parseFloat(document.getElementById('calc-energy-price').value) || 0;
-    const wearRate = parseFloat(document.getElementById('calc-wear').value) || 0;
-    const margin = parseFloat(document.getElementById('calc-margin').value) || 0;
+// CRUD Fornecedores
+function saveFornecedor(e) {
+    e.preventDefault();
+    const id = document.getElementById('fornecedor-id').value;
+    const name = document.getElementById('fornecedor-nome').value;
+    const contact = document.getElementById('fornecedor-contato').value;
+    const phone = document.getElementById('fornecedor-tel').value;
 
-    const selectedInsumo = insumos.find(i => i.id == insumoId);
-    const costPerGram = selectedInsumo ? (selectedInsumo.cost / 1000) : 0;
-
-    const materialCost = weight * costPerGram;
-    const energyCost = hours * kw * energyPrice;
-    const wearCost = hours * wearRate;
-    const totalCost = materialCost + energyCost + wearCost;
-    const profitValue = totalCost * (margin / 100);
-    const finalPrice = totalCost + profitValue;
-
-    document.getElementById('res-material-cost').innerText = formatCurrency(materialCost);
-    document.getElementById('res-energy-cost').innerText = formatCurrency(energyCost);
-    document.getElementById('res-wear-cost').innerText = formatCurrency(wearCost);
-    document.getElementById('res-total-cost').innerText = formatCurrency(totalCost);
-    document.getElementById('res-profit-value').innerText = formatCurrency(profitValue);
-    document.getElementById('res-final-price').innerText = formatCurrency(finalPrice);
+    if (id) {
+        const item = db.fornecedores.find(x => x.id == id);
+        item.name = name; item.contact = contact; item.phone = phone;
+        addLog('EDITAR', `Fornecedor editado: ${name}`);
+    } else {
+        const newId = Date.now();
+        db.fornecedores.push({ id: newId, name, contact, phone });
+        addLog('INSERIR', `Novo fornecedor cadastrado: ${name}`);
+    }
+    saveDB(); resetFornecedorForm(); renderCadastros(); populateSelects();
+}
+function editFornecedor(id) {
+    const f = db.fornecedores.find(x => x.id == id);
+    document.getElementById('fornecedor-id').value = f.id;
+    document.getElementById('fornecedor-nome').value = f.name;
+    document.getElementById('fornecedor-contato').value = f.contact;
+    document.getElementById('fornecedor-tel').value = f.phone;
+    document.getElementById('form-fornecedor-title').textContent = 'Editar Fornecedor';
+}
+function deleteFornecedor(id) {
+    const f = db.fornecedores.find(x => x.id == id);
+    if(confirm('Deseja excluir este fornecedor?')) {
+        db.fornecedores = db.fornecedores.filter(x => x.id != id);
+        addLog('EXCLUIR', `Fornecedor excluído: ${f.name}`);
+        saveDB(); renderCadastros(); populateSelects();
+    }
+}
+function resetFornecedorForm() {
+    document.getElementById('form-fornecedor').reset();
+    document.getElementById('fornecedor-id').value = '';
+    document.getElementById('form-fornecedor-title').textContent = 'Novo Fornecedor';
 }
 
-// Auto Fill Sale Details when a Product is selected
-function autoFillSaleFromProduct() {
-    const prodId = document.getElementById('sale-product-select').value;
-    if (!prodId) return;
+// CRUD Categorias
+function saveCategoria(e) {
+    e.preventDefault();
+    const id = document.getElementById('categoria-id').value;
+    const name = document.getElementById('categoria-nome').value;
 
-    const prod = products.find(p => p.id == prodId);
-    if (prod) {
-        document.getElementById('sale-item').value = prod.name;
-        document.getElementById('sale-insumo').value = prod.insumoId;
-        document.getElementById('sale-weight').value = prod.weight;
-        document.getElementById('sale-price').value = prod.price;
-        updateSaleCost();
+    if (id) {
+        const item = db.categorias.find(x => x.id == id);
+        item.name = name;
+        addLog('EDITAR', `Categoria editada: ${name}`);
+    } else {
+        const newId = Date.now();
+        db.categorias.push({ id: newId, name });
+        addLog('INSERIR', `Nova categoria cadastrada: ${name}`);
+    }
+    saveDB(); resetCategoriaForm(); renderCadastros(); populateSelects();
+}
+function editCategoria(id) {
+    const cat = db.categorias.find(x => x.id == id);
+    document.getElementById('categoria-id').value = cat.id;
+    document.getElementById('categoria-nome').value = cat.name;
+    document.getElementById('form-categoria-title').textContent = 'Editar Categoria';
+}
+function deleteCategoria(id) {
+    const cat = db.categorias.find(x => x.id == id);
+    if(confirm('Deseja excluir esta categoria?')) {
+        db.categorias = db.categorias.filter(x => x.id != id);
+        addLog('EXCLUIR', `Categoria excluída: ${cat.name}`);
+        saveDB(); renderCadastros(); populateSelects();
+    }
+}
+function resetCategoriaForm() {
+    document.getElementById('form-categoria').reset();
+    document.getElementById('categoria-id').value = '';
+    document.getElementById('form-categoria-title').textContent = 'Nova Categoria';
+}
+
+// CRUD Materiais
+function saveMaterial(e) {
+    e.preventDefault();
+    const id = document.getElementById('material-id').value;
+    const name = document.getElementById('material-nome').value;
+
+    if (id) {
+        const item = db.materiais.find(x => x.id == id);
+        item.name = name;
+        addLog('EDITAR', `Material editado: ${name}`);
+    } else {
+        const newId = Date.now();
+        db.materiais.push({ id: newId, name });
+        addLog('INSERIR', `Novo material cadastrado: ${name}`);
+    }
+    saveDB(); resetMaterialForm(); renderCadastros(); populateSelects();
+}
+function editMaterial(id) {
+    const m = db.materiais.find(x => x.id == id);
+    document.getElementById('material-id').value = m.id;
+    document.getElementById('material-nome').value = m.name;
+    document.getElementById('form-material-title').textContent = 'Editar Material';
+}
+function deleteMaterial(id) {
+    const m = db.materiais.find(x => x.id == id);
+    if(confirm('Deseja excluir este material?')) {
+        db.materiais = db.materiais.filter(x => x.id != id);
+        addLog('EXCLUIR', `Material excluído: ${m.name}`);
+        saveDB(); renderCadastros(); populateSelects();
+    }
+}
+function resetMaterialForm() {
+    document.getElementById('form-material').reset();
+    document.getElementById('material-id').value = '';
+    document.getElementById('form-material-title').textContent = 'Novo Material';
+}
+
+// ================= MÓDULO: PRODUTOS =================
+function renderProdutos() {
+    populateSelects();
+    const tb = document.getElementById('table-produtos-body');
+    tb.innerHTML = db.produtos.map(p => {
+        const cat = db.categorias.find(c => c.id == p.categoryId)?.name || '-';
+        const mat = db.materiais.find(m => m.id == p.materialId)?.name || '-';
+        const forn = db.fornecedores.find(f => f.id == p.supplierId)?.name || '-';
+        const preco = p.suggestedPrice ? `R$ ${Number(p.suggestedPrice).toFixed(2)}` : '-';
+        return `
+            <tr>
+                <td>${p.description}</td>
+                <td>${cat}</td>
+                <td>${mat}</td>
+                <td>${forn}</td>
+                <td>${preco}</td>
+                <td>
+                    <button class="btn-secondary" onclick="editProduto(${p.id})"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-danger" onclick="deleteProduto(${p.id})"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function saveProduto(e) {
+    e.preventDefault();
+    const id = document.getElementById('produto-id').value;
+    const description = document.getElementById('produto-descricao').value;
+    const categoryId = document.getElementById('produto-categoria').value;
+    const materialId = document.getElementById('produto-material').value;
+    const supplierId = document.getElementById('produto-fornecedor').value;
+    const suggestedPrice = document.getElementById('produto-preco').value;
+
+    if (id) {
+        const p = db.produtos.find(x => x.id == id);
+        p.description = description; p.categoryId = categoryId; p.materialId = materialId; p.supplierId = supplierId; p.suggestedPrice = suggestedPrice;
+        addLog('EDITAR', `Produto editado: ${description}`);
+    } else {
+        const newId = Date.now();
+        db.produtos.push({ id: newId, description, categoryId, materialId, supplierId, suggestedPrice });
+        // Inicializar estoque do produto
+        if(!db.estoque) db.estoque = {};
+        db.estoque[newId] = { quantity: 0 };
+        addLog('INSERIR', `Novo produto cadastrado: ${description}`);
+    }
+    saveDB(); resetProdutoForm(); renderProdutos();
+}
+
+function editProduto(id) {
+    const p = db.produtos.find(x => x.id == id);
+    document.getElementById('produto-id').value = p.id;
+    document.getElementById('produto-descricao').value = p.description;
+    document.getElementById('produto-categoria').value = p.categoryId;
+    document.getElementById('produto-material').value = p.materialId;
+    document.getElementById('produto-fornecedor').value = p.supplierId;
+    document.getElementById('produto-preco').value = p.suggestedPrice || '';
+    document.getElementById('form-produto-title').textContent = 'Editar Produto';
+}
+
+function deleteProduto(id) {
+    const p = db.produtos.find(x => x.id == id);
+    if(confirm('Deseja excluir este produto?')) {
+        db.produtos = db.produtos.filter(x => x.id != id);
+        if(db.estoque && db.estoque[id]) delete db.estoque[id];
+        addLog('EXCLUIR', `Produto excluído: ${p.description}`);
+        saveDB(); renderProdutos();
     }
 }
 
-// Form Handlers & Stock Updates
-function handleSaveInsumo(e) {
-    e.preventDefault();
-    const newInsumo = {
-        id: Date.now(),
-        name: document.getElementById('insumo-name').value,
-        type: document.getElementById('insumo-type').value,
-        supplierId: parseInt(document.getElementById('insumo-supplier').value),
-        qty: parseFloat(document.getElementById('insumo-qty').value),
-        minQty: parseFloat(document.getElementById('insumo-min').value),
-        cost: parseFloat(document.getElementById('insumo-cost').value)
-    };
-
-    insumos.push(newInsumo);
-    saveData();
-    closeModal('modal-insumo');
-    document.getElementById('form-insumo').reset();
+function resetProdutoForm() {
+    document.getElementById('form-produto').reset();
+    document.getElementById('produto-id').value = '';
+    document.getElementById('form-produto-title').textContent = 'Cadastrar Novo Produto';
 }
 
-function handleSaveProduct(e) {
-    e.preventDefault();
-    const newProduct = {
-        id: Date.now(),
-        name: document.getElementById('product-name').value,
-        category: document.getElementById('product-category').value,
-        insumoId: parseInt(document.getElementById('product-insumo').value),
-        weight: parseFloat(document.getElementById('product-weight').value),
-        hours: parseFloat(document.getElementById('product-hours').value),
-        price: parseFloat(document.getElementById('product-price').value)
-    };
+// ================= MÓDULO: ESTOQUE =================
+function renderEstoque() {
+    const filterProd = document.getElementById('filtro-estoque-prod').value.toLowerCase();
+    const filterForn = document.getElementById('filtro-estoque-forn').value;
 
-    products.push(newProduct);
-    saveData();
-    closeModal('modal-product');
-    document.getElementById('form-product').reset();
+    const tb = document.getElementById('table-estoque-body');
+    let html = '';
+
+    db.produtos.forEach(p => {
+        if (filterProd && !p.description.toLowerCase().includes(filterProd)) return;
+        if (filterForn && p.supplierId != filterForn) return;
+
+        if(!db.estoque) db.estoque = {};
+        if(!db.estoque[p.id]) db.estoque[p.id] = { quantity: 0 };
+
+        const qtd = db.estoque[p.id].quantity;
+        const fornecedor = db.fornecedores.find(f => f.id == p.supplierId)?.name || 'Desconhecido';
+        const valorUnit = p.suggestedPrice ? `R$ ${Number(p.suggestedPrice).toFixed(2)}` : 'R$ 0,00';
+
+        let statusBadge = `<span class="badge badge-success">Normal</span>`;
+        if (qtd <= 0) statusBadge = `<span class="badge badge-danger">Esgotado</span>`;
+        else if (qtd <= 3) statusBadge = `<span class="badge badge-warning">Baixo</span>`;
+
+        html += `
+            <tr>
+                <td>${p.description}</td>
+                <td><b>${qtd}</b></td>
+                <td>${statusBadge}</td>
+                <td>${fornecedor}</td>
+                <td>${valorUnit}</td>
+                <td>
+                    <button class="btn-secondary" onclick="ajustarEstoque(${p.id})"><i class="fa-solid fa-sliders"></i> Ajustar</button>
+                </td>
+            </tr>
+        `;
+    });
+    tb.innerHTML = html;
 }
 
-function handleSaveSale(e) {
+function ajustarEstoque(productId) {
+    const p = db.produtos.find(x => x.id == productId);
+    const atual = db.estoque[productId]?.quantity || 0;
+    const novoQtd = prompt(`Ajuste pontual de estoque para "${p.description}".\nQuantidade atual: ${atual}\nDigite a nova quantidade total:`, atual);
+    
+    if (novoQtd !== null && !isNaN(novoQtd)) {
+        db.estoque[productId].quantity = Number(novoQtd);
+        addLog('ESTOQUE', `Ajuste manual de estoque do produto ${p.description} para ${novoQtd} unidades.`);
+        saveDB();
+        renderEstoque();
+    }
+}
+
+// ================= MÓDULO: SUPRIMENTOS =================
+function calcSupTotal() {
+    const qtd = Number(document.getElementById('sup-qtd').value) || 0;
+    const valor = Number(document.getElementById('sup-valor').value) || 0;
+    const frete = Number(document.getElementById('sup-frete').value) || 0;
+    const outros = Number(document.getElementById('sup-outros').value) || 0;
+    
+    const total = valor + frete + outros;
+    document.getElementById('sup-total').value = total.toFixed(2);
+}
+
+function renderSuprimentos() {
+    populateSelects();
+    const tb = document.getElementById('table-suprimentos-body');
+    tb.innerHTML = db.suprimentos.map(s => {
+        const forn = db.fornecedores.find(f => f.id == s.supplierId)?.name || '-';
+        return `
+            <tr>
+                <td>${s.description}</td>
+                <td>${s.type}</td>
+                <td>${forn}</td>
+                <td>${s.quantity}</td>
+                <td>${s.minStock}</td>
+                <td>R$ ${Number(s.total).toFixed(2)}</td>
+                <td>
+                    <button class="btn-secondary" onclick="editSuprimento(${s.id})"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-danger" onclick="deleteSuprimento(${s.id})"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function saveSuprimento(e) {
     e.preventDefault();
-    const insumoId = document.getElementById('sale-insumo').value;
-    const weight = parseFloat(document.getElementById('sale-weight').value);
-    const extraCost = parseFloat(document.getElementById('sale-extra-cost').value) || 0;
-    const price = parseFloat(document.getElementById('sale-price').value);
+    const id = document.getElementById('suprimento-id').value;
+    const description = document.getElementById('sup-descricao').value;
+    const type = document.getElementById('sup-tipo').value;
+    const supplierId = document.getElementById('sup-fornecedor').value;
+    const quantity = Number(document.getElementById('sup-qtd').value);
+    const minStock = Number(document.getElementById('sup-min').value);
+    const value = Number(document.getElementById('sup-valor').value);
+    const freight = Number(document.getElementById('sup-frete').value);
+    const others = Number(document.getElementById('sup-outros').value);
+    const total = value + freight + others;
 
-    const targetInsumo = insumos.find(i => i.id == insumoId);
-    if (!targetInsumo) return alert('Selecione um insumo válido!');
+    if (id) {
+        const s = db.suprimentos.find(x => x.id == id);
+        s.description = description; s.type = type; s.supplierId = supplierId; s.quantity = quantity; s.minStock = minStock; s.value = value; s.freight = freight; s.others = others; s.total = total;
+        addLog('EDITAR', `Suprimento editado: ${description}`);
+    } else {
+        const newId = Date.now();
+        db.suprimentos.push({ id: newId, description, type, supplierId, quantity, minStock, value, freight, others, total });
+        addLog('INSERIR', `Novo suprimento cadastrado: ${description}`);
+    }
+    saveDB(); resetSuprimentoForm(); renderSuprimentos();
+}
 
-    if (targetInsumo.qty < weight) {
-        if (!confirm('A quantidade de insumo usada é maior do que a disponível no estoque. Deseja continuar assim mesmo?')) {
-            return;
+function editSuprimento(id) {
+    const s = db.suprimentos.find(x => x.id == id);
+    document.getElementById('suprimento-id').value = s.id;
+    document.getElementById('sup-descricao').value = s.description;
+    document.getElementById('sup-tipo').value = s.type;
+    document.getElementById('sup-fornecedor').value = s.supplierId;
+    document.getElementById('sup-qtd').value = s.quantity;
+    document.getElementById('sup-min').value = s.minStock;
+    document.getElementById('sup-valor').value = s.value;
+    document.getElementById('sup-frete').value = s.freight;
+    document.getElementById('sup-outros').value = s.others;
+    document.getElementById('sup-total').value = s.total.toFixed(2);
+    document.getElementById('form-suprimento-title').textContent = 'Editar Suprimento';
+}
+
+function deleteSuprimento(id) {
+    const s = db.suprimentos.find(x => x.id == id);
+    if(confirm('Deseja excluir este suprimento?')) {
+        db.suprimentos = db.suprimentos.filter(x => x.id != id);
+        addLog('EXCLUIR', `Suprimento excluído: ${s.description}`);
+        saveDB(); renderSuprimentos();
+    }
+}
+
+function resetSuprimentoForm() {
+    document.getElementById('form-suprimento').reset();
+    document.getElementById('suprimento-id').value = '';
+    document.getElementById('sup-total').value = '';
+    document.getElementById('form-suprimento-title').textContent = 'Novo Suprimento';
+}
+
+// ================= MÓDULO: VENDAS =================
+function calcVendaTotal() {
+    const qtd = Number(document.getElementById('venda-qtd').value) || 1;
+    const valorUnit = Number(document.getElementById('venda-valor').value) || 0;
+    const desconto = Number(document.getElementById('venda-desconto').value) || 0;
+
+    const subtotal = qtd * valorUnit;
+    const totalFinal = subtotal - (subtotal * (desconto / 100));
+    document.getElementById('venda-final').value = totalFinal.toFixed(2);
+}
+
+function renderVendas() {
+    populateSelects();
+    const tb = document.getElementById('table-vendas-body');
+    tb.innerHTML = db.vendas.map(v => {
+        const cliente = db.clientes.find(c => c.id == v.clientId)?.name || '-';
+        const produto = db.produtos.find(p => p.id == v.productId)?.description || '-';
+        return `
+            <tr>
+                <td>${v.date}</td>
+                <td>${cliente}</td>
+                <td>${produto}</td>
+                <td>${v.quantity}</td>
+                <td>R$ ${Number(v.finalValue).toFixed(2)}</td>
+                <td>
+                    <button class="btn-secondary" onclick="editVenda(${v.id})"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-danger" onclick="deleteVenda(${v.id})"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function saveVenda(e) {
+    e.preventDefault();
+    const id = document.getElementById('venda-id').value;
+    const clientId = document.getElementById('venda-cliente').value;
+    const productId = document.getElementById('venda-produto').value;
+    const quantity = Number(document.getElementById('venda-qtd').value);
+    const materialId = document.getElementById('venda-material').value;
+    const grams = Number(document.getElementById('venda-gramas').value);
+    const colors = document.getElementById('venda-cores').value;
+    const creationTime = document.getElementById('venda-tempo').value;
+    const value = Number(document.getElementById('venda-valor').value);
+    const discount = Number(document.getElementById('venda-desconto').value);
+    const finalValue = Number(document.getElementById('venda-final').value);
+    const observation = document.getElementById('venda-obs').value;
+    const date = new Date().toLocaleDateString('pt-BR');
+
+    if (id) {
+        const v = db.vendas.find(x => x.id == id);
+        v.clientId = clientId; v.productId = productId; v.quantity = quantity; v.materialId = materialId; v.grams = grams; v.colors = colors; v.creationTime = creationTime; v.value = value; v.discount = discount; v.finalValue = finalValue; v.observation = observation;
+        addLog('EDITAR', `Venda editada (ID: ${id})`);
+    } else {
+        const newId = Date.now();
+        db.vendas.push({ id: newId, date, clientId, productId, quantity, materialId, grams, colors, creationTime, value, discount, finalValue, observation });
+        
+        // Dar baixa no estoque automaticamente
+        if(!db.estoque) db.estoque = {};
+        if(!db.estoque[productId]) db.estoque[productId] = { quantity: 0 };
+        db.estoque[productId].quantity = Math.max(0, db.estoque[productId].quantity - quantity);
+
+        addLog('INSERIR', `Nova venda registrada para cliente ID ${clientId}`);
+    }
+    saveDB(); resetVendaForm(); renderVendas(); renderDashboard();
+}
+
+function editVenda(id) {
+    const v = db.vendas.find(x => x.id == id);
+    document.getElementById('venda-id').value = v.id;
+    document.getElementById('venda-cliente').value = v.clientId;
+    document.getElementById('venda-produto').value = v.productId;
+    document.getElementById('venda-qtd').value = v.quantity;
+    document.getElementById('venda-material').value = v.materialId;
+    document.getElementById('venda-gramas').value = v.grams;
+    document.getElementById('venda-cores').value = v.colors;
+    document.getElementById('venda-tempo').value = v.creationTime;
+    document.getElementById('venda-valor').value = v.value;
+    document.getElementById('venda-desconto').value = v.discount;
+    document.getElementById('venda-final').value = v.finalValue.toFixed(2);
+    document.getElementById('venda-obs').value = v.observation || '';
+    document.getElementById('form-venda-title').textContent = 'Editar Venda';
+}
+
+function deleteVenda(id) {
+    if(confirm('Deseja excluir esta venda?')) {
+        const v = db.vendas.find(x => x.id == id);
+        db.vendas = db.vendas.filter(x => x.id != id);
+        addLog('EXCLUIR', `Venda excluída (ID: ${id})`);
+        saveDB(); renderVendas(); renderDashboard();
+    }
+}
+
+function resetVendaForm() {
+    document.getElementById('form-venda').reset();
+    document.getElementById('venda-id').value = '';
+    document.getElementById('venda-final').value = '';
+    document.getElementById('form-venda-title').textContent = 'Nova Venda';
+}
+
+// ================= MÓDULO: FINANCEIRO =================
+function renderFinanceiro() {
+    const inicio = document.getElementById('filt-fin-inicio').value;
+    const fim = document.getElementById('filt-fin-fim').value;
+    const cliId = document.getElementById('filt-fin-cliente').value;
+    const prodId = document.getElementById('filt-fin-produto').value;
+
+    let filtered = db.vendas.filter(v => {
+        // Filtro de cliente e produto
+        if (cliId && v.clientId != cliId) return false;
+        if (prodId && v.productId != prodId) return false;
+
+        // Filtro de data (formato DD/MM/AAAA no item vs YYYY-MM-DD no input)
+        if (inicio || fim) {
+            const parts = v.date.split('/');
+            const vDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            if (inicio && vDate < new Date(inicio)) return false;
+            if (fim && vDate > new Date(fim)) return false;
         }
-    }
+        return true;
+    });
 
-    // Deduct Stock
-    targetInsumo.qty -= weight;
+    let faturamentoTotal = filtered.reduce((acc, item) => acc + Number(item.finalValue), 0);
+    let lucroEstimado = faturamentoTotal * 0.55; // Estimativa padrão de lucro 55% em impressão 3D
 
-    const materialCost = weight * (targetInsumo.cost / 1000);
-    const totalCost = materialCost + extraCost;
+    document.getElementById('fin-faturamento').textContent = `R$ ${faturamentoTotal.toFixed(2)}`;
+    document.getElementById('fin-lucro').textContent = `R$ ${lucroEstimado.toFixed(2)}`;
 
-    const newSale = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString('pt-BR'),
-        customer: document.getElementById('sale-customer').value,
-        item: document.getElementById('sale-item').value,
-        insumoName: targetInsumo.name,
-        weight: weight,
-        totalCost: totalCost,
-        price: price
-    };
-
-    sales.push(newSale);
-    saveData();
-    closeModal('modal-sale');
-    document.getElementById('form-sale').reset();
+    const tb = document.getElementById('table-financeiro-body');
+    tb.innerHTML = filtered.map(v => {
+        const cliente = db.clientes.find(c => c.id == v.clientId)?.name || '-';
+        const produto = db.produtos.find(p => p.id == v.productId)?.description || '-';
+        return `
+            <tr>
+                <td>${v.date}</td>
+                <td>${cliente}</td>
+                <td>${produto}</td>
+                <td>${v.quantity}</td>
+                <td>R$ ${Number(v.finalValue).toFixed(2)}</td>
+                <td>
+                    <button class="btn-primary" onclick="openPrintModal(${v.id})"><i class="fa-solid fa-file-pdf"></i> PDF Resumo</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
-function handleSaveSupplier(e) {
-    e.preventDefault();
-    const newSupplier = {
-        id: Date.now(),
-        name: document.getElementById('supplier-name').value,
-        contact: document.getElementById('supplier-contact').value,
-        phone: document.getElementById('supplier-phone').value,
-        products: document.getElementById('supplier-products').value
-    };
+// PDF / IMPRESSÃO RESUMO DA VENDA
+function openPrintModal(vendaId) {
+    const v = db.vendas.find(x => x.id == vendaId);
+    const cliente = db.clientes.find(c => c.id == v.clientId)?.name || '-';
+    const produto = db.produtos.find(p => p.id == v.productId)?.description || '-';
+    const material = db.materiais.find(m => m.id == v.materialId)?.name || '-';
 
-    suppliers.push(newSupplier);
-    saveData();
-    closeModal('modal-supplier');
-    document.getElementById('form-supplier').reset();
+    document.getElementById('print-data-emissao').textContent = `Emitido em: ${new Date().toLocaleString('pt-BR')}`;
+    document.getElementById('print-body-content').innerHTML = `
+        <p><b>ID da Venda:</b> #${v.id}</p>
+        <p><b>Data:</b> ${v.date}</p>
+        <p><b>Cliente:</b> ${cliente}</p>
+        <p><b>Produto:</b> ${produto}</p>
+        <p><b>Quantidade:</b> ${v.quantity}</p>
+        <p><b>Material Utilizado:</b> ${material}</p>
+        <p><b>Gramagem:</b> ${v.grams}g</p>
+        <p><b>Cores:</b> ${v.colors}</p>
+        <p><b>Tempo de Criação:</b> ${v.creationTime}</p>
+        <p><b>Valor Unitário:</b> R$ ${Number(v.value).toFixed(2)}</p>
+        <p><b>Desconto:</b> ${v.discount}%</p>
+        <p><b>Valor Final:</b> R$ ${Number(v.finalValue).toFixed(2)}</p>
+        <p><b>Observações:</b> ${v.observation || 'Nenhuma'}</p>
+    `;
+    document.getElementById('print-modal').classList.remove('hidden');
 }
 
-function updateSaleCost() {
-    const insumoId = document.getElementById('sale-insumo').value;
-    const weight = parseFloat(document.getElementById('sale-weight').value) || 0;
-    const targetInsumo = insumos.find(i => i.id == insumoId);
-
-    if (targetInsumo) {
-        const cost = weight * (targetInsumo.cost / 1000);
-        document.getElementById('sale-material-cost-display').innerText = formatCurrency(cost);
-    }
+function closePrintModal() {
+    document.getElementById('print-modal').classList.add('hidden');
 }
 
-// Delete Handlers
-function deleteInsumo(id) {
-    if (confirm('Tem certeza que deseja excluir este insumo?')) {
-        insumos = insumos.filter(i => i.id !== id);
-        saveData();
-    }
+// ================= MÓDULO: LOGS =================
+function renderLogs() {
+    const tb = document.getElementById('table-logs-body');
+    tb.innerHTML = db.logs.map(l => `
+        <tr>
+            <td>${l.timestamp}</td>
+            <td><b>${l.user}</b></td>
+            <td><span class="badge badge-success">${l.action}</span></td>
+            <td>${l.details}</td>
+        </tr>
+    `).join('');
 }
 
-function deleteProduct(id) {
-    if (confirm('Tem certeza que deseja excluir este produto do catálogo?')) {
-        products = products.filter(p => p.id !== id);
-        saveData();
-    }
+// ================= MÓDULO: DASHBOARD =================
+function renderDashboard() {
+    let fatTotal = db.vendas.reduce((acc, item) => acc + Number(item.finalValue), 0);
+    let lucroEst = fatTotal * 0.55;
+    let totalVendas = db.vendas.length;
+
+    document.getElementById('dash-faturamento').textContent = `R$ ${fatTotal.toFixed(2)}`;
+    document.getElementById('dash-lucro').textContent = `R$ ${lucroEst.toFixed(2)}`;
+    document.getElementById('dash-total-vendas').textContent = totalVendas;
+
+    const tb = document.getElementById('dash-last-sales-table');
+    const lastSales = [...db.vendas].slice(0, 5);
+    tb.innerHTML = lastSales.map(v => {
+        const cliente = db.clientes.find(c => c.id == v.clientId)?.name || '-';
+        const produto = db.produtos.find(p => p.id == v.productId)?.description || '-';
+        const lucroItem = Number(v.finalValue) * 0.55;
+        return `
+            <tr>
+                <td>${v.date}</td>
+                <td>${cliente}</td>
+                <td>${produto}</td>
+                <td>R$ ${Number(v.finalValue).toFixed(2)}</td>
+                <td>R$ ${lucroItem.toFixed(2)}</td>
+            </tr>
+        `;
+    }).join('');
 }
 
-function deleteSale(id) {
-    if (confirm('Tem certeza que deseja remover esta venda?')) {
-        sales = sales.filter(s => s.id !== id);
-        saveData();
-    }
+// ================= BACKUP & RESTORE =================
+function exportBackup() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", `navora_3d_backup_${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+    addLog('BACKUP', 'Backup do banco de dados exportado em JSON.');
 }
 
-function deleteSupplier(id) {
-    if (confirm('Tem certeza que deseja excluir este fornecedor?')) {
-        suppliers = suppliers.filter(s => s.id !== id);
-        saveData();
-    }
-}
+function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-// Backup & Import/Export JSON Logic
-function exportDataJSON() {
-    const backupData = {
-        version: '1.0',
-        exportDate: new Date().toISOString(),
-        insumos: insumos,
-        products: products,
-        suppliers: suppliers,
-        sales: sales
-    };
-
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `navora3d_backup_${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-}
-
-function importDataJSON(event) {
-    const fileReader = new FileReader();
-    fileReader.onload = function(e) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
         try {
-            const importedData = JSON.parse(e.target.result);
-            if (importedData.insumos && importedData.sales && importedData.suppliers && importedData.products) {
-                if (confirm('Deseja substituir todos os seus dados atuais pelo arquivo de backup selecionado?')) {
-                    insumos = importedData.insumos;
-                    products = importedData.products;
-                    suppliers = importedData.suppliers;
-                    sales = importedData.sales;
-                    saveData();
-                    alert('Backup restaurado com sucesso!');
-                }
+            const imported = JSON.parse(e.target.result);
+            if (imported && imported.users && imported.vendas) {
+                db = imported;
+                saveDB();
+                alert('Backup restaurado com sucesso!');
+                addLog('RESTORE', 'Backup do banco de dados importado e restaurado.');
+                initApp();
             } else {
-                alert('O arquivo selecionado não contém uma estrutura de backup válida do Navora 3D.');
+                alert('Arquivo de backup inválido.');
             }
-        } catch (err) {
-            alert('Erro ao ler o arquivo JSON de backup.');
+        } catch(err) {
+            alert('Erro ao ler arquivo JSON.');
         }
     };
-    fileReader.readAsText(event.target.files[0]);
-}
-
-// Modal Helpers
-function openModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
-}
-
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-}
-
-// Utility Formatter
-function formatCurrency(val) {
-    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    reader.readAsText(file);
 }

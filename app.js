@@ -1,4 +1,4 @@
-// BANCO DE DADOS LOCAL & ESTADO
+// ESTRUTURA DO BANCO DE DADOS LOCAL
 let db = {
     currentUser: null,
     users: [
@@ -12,7 +12,8 @@ let db = {
     materiais: [],
     produtos: [],
     suprimentos: [],
-    vendas: []
+    vendas: [],
+    estoque: {}
 };
 
 // INICIALIZAÇÃO
@@ -25,9 +26,15 @@ function loadDB() {
     const saved = localStorage.getItem('navora_db');
     if (saved) {
         try {
-            db = JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+            db = { ...db, ...parsed };
+            // Garantir credenciais padrão ativas
+            db.users = [
+                { username: 'pedrorostirolla', password: 'Rds@2026!' },
+                { username: 'dudapaganini', password: 'Couve5flor*' }
+            ];
         } catch(e) {
-            console.error('Erro ao carregar banco de dados', e);
+            console.error('Erro ao carregar banco de dados local:', e);
         }
     }
 }
@@ -38,65 +45,78 @@ function saveDB() {
 
 // LOGS DE AUDITORIA
 function addLog(action, details) {
-    const user = db.currentUser ? db.currentUser.username : 'sistema';
+    const user = db.currentUser ? db.currentUser.username : 'Sistema';
     const timestamp = new Date().toLocaleString('pt-BR');
+    if(!db.logs) db.logs = [];
     db.logs.unshift({ timestamp, user, action, details });
     saveDB();
 }
 
-// AUTENTICAÇÃO
+// AUTENTICAÇÃO E LOGIN
 function handleLogin(e) {
     e.preventDefault();
-    const u = document.getElementById('username').value.trim();
-    const p = document.getElementById('password').value;
+    const usernameInput = document.getElementById('username').value.trim();
+    const passwordInput = document.getElementById('password').value.trim();
     const errorEl = document.getElementById('login-error');
 
-    const found = db.users.find(x => x.username === u && x.password === p);
-    if (found) {
-        db.currentUser = found;
+    // Validação estrita dos dois usuários do sistema
+    const validUser = db.users.find(u => 
+        u.username.toLowerCase() === usernameInput.toLowerCase() && 
+        u.password === passwordInput
+    );
+
+    if (validUser) {
+        db.currentUser = { username: validUser.username };
         saveDB();
         errorEl.textContent = '';
+        
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
-        document.getElementById('logged-user-name').textContent = found.username;
-        addLog('LOGIN', `Usuário ${found.username} entrou no sistema.`);
+        document.getElementById('logged-user-name').textContent = validUser.username;
+        
+        addLog('LOGIN', `Usuário ${validUser.username} realizou login.`);
         initApp();
     } else {
-        errorEl.textContent = 'Usuário ou senha inválidos!';
+        errorEl.textContent = 'Usuário ou senha incorretos!';
     }
 }
 
 function handleLogout() {
-    if(db.currentUser) {
-        addLog('LOGOUT', `Usuário ${db.currentUser.username} saiu do sistema.`);
+    if (db.currentUser) {
+        addLog('LOGOUT', `Usuário ${db.currentUser.username} deslogou.`);
     }
     db.currentUser = null;
     saveDB();
     document.getElementById('app-container').classList.add('hidden');
     document.getElementById('login-screen').classList.remove('hidden');
     document.getElementById('login-form').reset();
+    document.getElementById('login-error').textContent = '';
 }
 
 function checkSession() {
-    if (db.currentUser) {
+    if (db.currentUser && db.currentUser.username) {
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
         document.getElementById('logged-user-name').textContent = db.currentUser.username;
         initApp();
+    } else {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('app-container').classList.add('hidden');
     }
 }
 
-// NAVEGAÇÃO DE MÓDULOS
+// TROCA DE MÓDULOS
 function switchModule(moduleName) {
     document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active'));
-    document.querySelectorAll('.sidebar-nav .nav-btn, .sidebar-footer .nav-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     
     const targetSec = document.getElementById(`module-${moduleName}`);
     if (targetSec) targetSec.classList.add('active');
 
-    event.currentTarget.classList.add('active');
+    const activeBtn = document.querySelector(`.nav-btn[data-module="${moduleName}"]`);
+    if(activeBtn) activeBtn.classList.add('active');
 
-    // Atualizar dados do módulo específico
+    // Atualização sob demanda dos dados do módulo selecionado
     if (moduleName === 'dashboard') renderDashboard();
     if (moduleName === 'cadastros') renderCadastros();
     if (moduleName === 'produtos') renderProdutos();
@@ -112,13 +132,13 @@ function initApp() {
     populateSelects();
 }
 
-// POPULAR SELECTS GLOBAIS
+// POPULAR SELECTS INTERLIGADOS
 function populateSelects() {
     // Clientes
     const selCliente = document.getElementById('venda-cliente');
     const filtFinCli = document.getElementById('filt-fin-cliente');
     if(selCliente) selCliente.innerHTML = '<option value="">Selecione...</option>' + db.clientes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    if(filtFinCli) filtFinCli.innerHTML = '<option value="">Todos</option>' + db.clientes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if(filtFinCli) filtFinCli.innerHTML = '<option value="">Todos os Clientes</option>' + db.clientes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
     // Fornecedores
     const selForn = document.getElementById('produto-fornecedor');
@@ -145,15 +165,16 @@ function populateSelects() {
     const filtFinProd = document.getElementById('filt-fin-produto');
     const prodOptions = '<option value="">Selecione...</option>' + db.produtos.map(p => `<option value="${p.id}">${p.description}</option>`).join('');
     if(selProd) selProd.innerHTML = prodOptions;
-    if(filtFinProd) filtFinProd.innerHTML = '<option value="">Todos</option>' + db.produtos.map(p => `<option value="${p.id}">${p.description}</option>`).join('');
+    if(filtFinProd) filtFinProd.innerHTML = '<option value="">Todos os Produtos</option>' + db.produtos.map(p => `<option value="${p.id}">${p.description}</option>`).join('');
 }
 
 // ================= MÓDULO: CADASTROS =================
-function switchCadastroTab(tabName) {
+function switchCadastroTab(event, tabName) {
     document.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    
     document.getElementById(`cad-tab-${tabName}`).classList.add('active');
-    event.currentTarget.classList.add('active');
+    if(event && event.currentTarget) event.currentTarget.classList.add('active');
     renderCadastros();
 }
 
@@ -162,7 +183,7 @@ function renderCadastros() {
     const tbCli = document.getElementById('table-clientes-body');
     tbCli.innerHTML = db.clientes.map(c => `
         <tr>
-            <td>${c.name}</td>
+            <td><b>${c.name}</b></td>
             <td>${c.phone || '-'}</td>
             <td>${c.email || '-'}</td>
             <td>
@@ -176,7 +197,7 @@ function renderCadastros() {
     const tbForn = document.getElementById('table-fornecedores-body');
     tbForn.innerHTML = db.fornecedores.map(f => `
         <tr>
-            <td>${f.name}</td>
+            <td><b>${f.name}</b></td>
             <td>${f.contact || '-'}</td>
             <td>${f.phone || '-'}</td>
             <td>
@@ -190,7 +211,7 @@ function renderCadastros() {
     const tbCat = document.getElementById('table-categorias-body');
     tbCat.innerHTML = db.categorias.map(cat => `
         <tr>
-            <td>${cat.name}</td>
+            <td><b>${cat.name}</b></td>
             <td>
                 <button class="btn-secondary" onclick="editCategoria(${cat.id})"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-danger" onclick="deleteCategoria(${cat.id})"><i class="fa-solid fa-trash"></i></button>
@@ -202,7 +223,7 @@ function renderCadastros() {
     const tbMat = document.getElementById('table-materiais-body');
     tbMat.innerHTML = db.materiais.map(m => `
         <tr>
-            <td>${m.name}</td>
+            <td><b>${m.name}</b></td>
             <td>
                 <button class="btn-secondary" onclick="editMaterial(${m.id})"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-danger" onclick="deleteMaterial(${m.id})"><i class="fa-solid fa-trash"></i></button>
@@ -240,7 +261,7 @@ function editCliente(id) {
 }
 function deleteCliente(id) {
     const c = db.clientes.find(x => x.id == id);
-    if(confirm('Deseja excluir este cliente?')) {
+    if(confirm(`Deseja excluir o cliente "${c.name}"?`)) {
         db.clientes = db.clientes.filter(x => x.id != id);
         addLog('EXCLUIR', `Cliente excluído: ${c.name}`);
         saveDB(); renderCadastros(); populateSelects();
@@ -281,7 +302,7 @@ function editFornecedor(id) {
 }
 function deleteFornecedor(id) {
     const f = db.fornecedores.find(x => x.id == id);
-    if(confirm('Deseja excluir este fornecedor?')) {
+    if(confirm(`Deseja excluir o fornecedor "${f.name}"?`)) {
         db.fornecedores = db.fornecedores.filter(x => x.id != id);
         addLog('EXCLUIR', `Fornecedor excluído: ${f.name}`);
         saveDB(); renderCadastros(); populateSelects();
@@ -318,7 +339,7 @@ function editCategoria(id) {
 }
 function deleteCategoria(id) {
     const cat = db.categorias.find(x => x.id == id);
-    if(confirm('Deseja excluir esta categoria?')) {
+    if(confirm(`Deseja excluir a categoria "${cat.name}"?`)) {
         db.categorias = db.categorias.filter(x => x.id != id);
         addLog('EXCLUIR', `Categoria excluída: ${cat.name}`);
         saveDB(); renderCadastros(); populateSelects();
@@ -355,7 +376,7 @@ function editMaterial(id) {
 }
 function deleteMaterial(id) {
     const m = db.materiais.find(x => x.id == id);
-    if(confirm('Deseja excluir este material?')) {
+    if(confirm(`Deseja excluir o material "${m.name}"?`)) {
         db.materiais = db.materiais.filter(x => x.id != id);
         addLog('EXCLUIR', `Material excluído: ${m.name}`);
         saveDB(); renderCadastros(); populateSelects();
@@ -378,7 +399,7 @@ function renderProdutos() {
         const preco = p.suggestedPrice ? `R$ ${Number(p.suggestedPrice).toFixed(2)}` : '-';
         return `
             <tr>
-                <td>${p.description}</td>
+                <td><b>${p.description}</b></td>
                 <td>${cat}</td>
                 <td>${mat}</td>
                 <td>${forn}</td>
@@ -408,7 +429,6 @@ function saveProduto(e) {
     } else {
         const newId = Date.now();
         db.produtos.push({ id: newId, description, categoryId, materialId, supplierId, suggestedPrice });
-        // Inicializar estoque do produto
         if(!db.estoque) db.estoque = {};
         db.estoque[newId] = { quantity: 0 };
         addLog('INSERIR', `Novo produto cadastrado: ${description}`);
@@ -429,7 +449,7 @@ function editProduto(id) {
 
 function deleteProduto(id) {
     const p = db.produtos.find(x => x.id == id);
-    if(confirm('Deseja excluir este produto?')) {
+    if(confirm(`Deseja excluir o produto "${p.description}"?`)) {
         db.produtos = db.produtos.filter(x => x.id != id);
         if(db.estoque && db.estoque[id]) delete db.estoque[id];
         addLog('EXCLUIR', `Produto excluído: ${p.description}`);
@@ -459,7 +479,7 @@ function renderEstoque() {
         if(!db.estoque[p.id]) db.estoque[p.id] = { quantity: 0 };
 
         const qtd = db.estoque[p.id].quantity;
-        const fornecedor = db.fornecedores.find(f => f.id == p.supplierId)?.name || 'Desconhecido';
+        const fornecedor = db.fornecedores.find(f => f.id == p.supplierId)?.name || 'N/A';
         const valorUnit = p.suggestedPrice ? `R$ ${Number(p.suggestedPrice).toFixed(2)}` : 'R$ 0,00';
 
         let statusBadge = `<span class="badge badge-success">Normal</span>`;
@@ -468,8 +488,8 @@ function renderEstoque() {
 
         html += `
             <tr>
-                <td>${p.description}</td>
-                <td><b>${qtd}</b></td>
+                <td><b>${p.description}</b></td>
+                <td><b style="font-size:16px; color:var(--primary);">${qtd}</b></td>
                 <td>${statusBadge}</td>
                 <td>${fornecedor}</td>
                 <td>${valorUnit}</td>
@@ -487,9 +507,9 @@ function ajustarEstoque(productId) {
     const atual = db.estoque[productId]?.quantity || 0;
     const novoQtd = prompt(`Ajuste pontual de estoque para "${p.description}".\nQuantidade atual: ${atual}\nDigite a nova quantidade total:`, atual);
     
-    if (novoQtd !== null && !isNaN(novoQtd)) {
+    if (novoQtd !== null && !isNaN(novoQtd) && novoQtd.trim() !== '') {
         db.estoque[productId].quantity = Number(novoQtd);
-        addLog('ESTOQUE', `Ajuste manual de estoque do produto ${p.description} para ${novoQtd} unidades.`);
+        addLog('ESTOQUE', `Ajuste manual de estoque de "${p.description}" para ${novoQtd} unidades.`);
         saveDB();
         renderEstoque();
     }
@@ -497,7 +517,6 @@ function ajustarEstoque(productId) {
 
 // ================= MÓDULO: SUPRIMENTOS =================
 function calcSupTotal() {
-    const qtd = Number(document.getElementById('sup-qtd').value) || 0;
     const valor = Number(document.getElementById('sup-valor').value) || 0;
     const frete = Number(document.getElementById('sup-frete').value) || 0;
     const outros = Number(document.getElementById('sup-outros').value) || 0;
@@ -513,7 +532,7 @@ function renderSuprimentos() {
         const forn = db.fornecedores.find(f => f.id == s.supplierId)?.name || '-';
         return `
             <tr>
-                <td>${s.description}</td>
+                <td><b>${s.description}</b></td>
                 <td>${s.type}</td>
                 <td>${forn}</td>
                 <td>${s.quantity}</td>
@@ -570,7 +589,7 @@ function editSuprimento(id) {
 
 function deleteSuprimento(id) {
     const s = db.suprimentos.find(x => x.id == id);
-    if(confirm('Deseja excluir este suprimento?')) {
+    if(confirm(`Deseja excluir o suprimento "${s.description}"?`)) {
         db.suprimentos = db.suprimentos.filter(x => x.id != id);
         addLog('EXCLUIR', `Suprimento excluído: ${s.description}`);
         saveDB(); renderSuprimentos();
@@ -604,7 +623,7 @@ function renderVendas() {
         return `
             <tr>
                 <td>${v.date}</td>
-                <td>${cliente}</td>
+                <td><b>${cliente}</b></td>
                 <td>${produto}</td>
                 <td>${v.quantity}</td>
                 <td>R$ ${Number(v.finalValue).toFixed(2)}</td>
@@ -636,17 +655,17 @@ function saveVenda(e) {
     if (id) {
         const v = db.vendas.find(x => x.id == id);
         v.clientId = clientId; v.productId = productId; v.quantity = quantity; v.materialId = materialId; v.grams = grams; v.colors = colors; v.creationTime = creationTime; v.value = value; v.discount = discount; v.finalValue = finalValue; v.observation = observation;
-        addLog('EDITAR', `Venda editada (ID: ${id})`);
+        addLog('EDITAR', `Venda alterada (ID: ${id})`);
     } else {
         const newId = Date.now();
         db.vendas.push({ id: newId, date, clientId, productId, quantity, materialId, grams, colors, creationTime, value, discount, finalValue, observation });
         
-        // Dar baixa no estoque automaticamente
+        // Baixa automática no estoque
         if(!db.estoque) db.estoque = {};
         if(!db.estoque[productId]) db.estoque[productId] = { quantity: 0 };
         db.estoque[productId].quantity = Math.max(0, db.estoque[productId].quantity - quantity);
 
-        addLog('INSERIR', `Nova venda registrada para cliente ID ${clientId}`);
+        addLog('INSERIR', `Nova venda registrada para o cliente ID ${clientId}`);
     }
     saveDB(); resetVendaForm(); renderVendas(); renderDashboard();
 }
@@ -669,8 +688,7 @@ function editVenda(id) {
 }
 
 function deleteVenda(id) {
-    if(confirm('Deseja excluir esta venda?')) {
-        const v = db.vendas.find(x => x.id == id);
+    if(confirm('Deseja cancelar/excluir esta venda?')) {
         db.vendas = db.vendas.filter(x => x.id != id);
         addLog('EXCLUIR', `Venda excluída (ID: ${id})`);
         saveDB(); renderVendas(); renderDashboard();
@@ -692,11 +710,9 @@ function renderFinanceiro() {
     const prodId = document.getElementById('filt-fin-produto').value;
 
     let filtered = db.vendas.filter(v => {
-        // Filtro de cliente e produto
         if (cliId && v.clientId != cliId) return false;
         if (prodId && v.productId != prodId) return false;
 
-        // Filtro de data (formato DD/MM/AAAA no item vs YYYY-MM-DD no input)
         if (inicio || fim) {
             const parts = v.date.split('/');
             const vDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
@@ -707,7 +723,7 @@ function renderFinanceiro() {
     });
 
     let faturamentoTotal = filtered.reduce((acc, item) => acc + Number(item.finalValue), 0);
-    let lucroEstimado = faturamentoTotal * 0.55; // Estimativa padrão de lucro 55% em impressão 3D
+    let lucroEstimado = faturamentoTotal * 0.55;
 
     document.getElementById('fin-faturamento').textContent = `R$ ${faturamentoTotal.toFixed(2)}`;
     document.getElementById('fin-lucro').textContent = `R$ ${lucroEstimado.toFixed(2)}`;
@@ -719,19 +735,19 @@ function renderFinanceiro() {
         return `
             <tr>
                 <td>${v.date}</td>
-                <td>${cliente}</td>
+                <td><b>${cliente}</b></td>
                 <td>${produto}</td>
                 <td>${v.quantity}</td>
                 <td>R$ ${Number(v.finalValue).toFixed(2)}</td>
                 <td>
-                    <button class="btn-primary" onclick="openPrintModal(${v.id})"><i class="fa-solid fa-file-pdf"></i> PDF Resumo</button>
+                    <button class="btn-primary" onclick="openPrintModal(${v.id})"><i class="fa-solid fa-file-pdf"></i> Resumo PDF</button>
                 </td>
             </tr>
         `;
     }).join('');
 }
 
-// PDF / IMPRESSÃO RESUMO DA VENDA
+// IMPRESSÃO / RESUMO DA VENDA EM PDF
 function openPrintModal(vendaId) {
     const v = db.vendas.find(x => x.id == vendaId);
     const cliente = db.clientes.find(c => c.id == v.clientId)?.name || '-';
@@ -740,19 +756,21 @@ function openPrintModal(vendaId) {
 
     document.getElementById('print-data-emissao').textContent = `Emitido em: ${new Date().toLocaleString('pt-BR')}`;
     document.getElementById('print-body-content').innerHTML = `
-        <p><b>ID da Venda:</b> #${v.id}</p>
-        <p><b>Data:</b> ${v.date}</p>
-        <p><b>Cliente:</b> ${cliente}</p>
-        <p><b>Produto:</b> ${produto}</p>
-        <p><b>Quantidade:</b> ${v.quantity}</p>
-        <p><b>Material Utilizado:</b> ${material}</p>
-        <p><b>Gramagem:</b> ${v.grams}g</p>
-        <p><b>Cores:</b> ${v.colors}</p>
-        <p><b>Tempo de Criação:</b> ${v.creationTime}</p>
-        <p><b>Valor Unitário:</b> R$ ${Number(v.value).toFixed(2)}</p>
-        <p><b>Desconto:</b> ${v.discount}%</p>
-        <p><b>Valor Final:</b> R$ ${Number(v.finalValue).toFixed(2)}</p>
-        <p><b>Observações:</b> ${v.observation || 'Nenhuma'}</p>
+        <div style="font-size:14px; line-height: 1.8; color: #1e293b;">
+            <p><b>Número da Venda:</b> #${v.id}</p>
+            <p><b>Data:</b> ${v.date}</p>
+            <p><b>Cliente:</b> ${cliente}</p>
+            <p><b>Produto:</b> ${produto}</p>
+            <p><b>Quantidade:</b> ${v.quantity}</p>
+            <p><b>Material:</b> ${material}</p>
+            <p><b>Peso Estimado:</b> ${v.grams} g</p>
+            <p><b>Cores:</b> ${v.colors}</p>
+            <p><b>Tempo de Produção:</b> ${v.creationTime}</p>
+            <p><b>Valor Unitário:</b> R$ ${Number(v.value).toFixed(2)}</p>
+            <p><b>Desconto Aplicado:</b> ${v.discount}%</p>
+            <p style="font-size:18px; margin-top:10px;"><b>Valor Total Final: R$ ${Number(v.finalValue).toFixed(2)}</b></p>
+            ${v.observation ? `<p style="margin-top:10px;"><b>Observações:</b> ${v.observation}</p>` : ''}
+        </div>
     `;
     document.getElementById('print-modal').classList.remove('hidden');
 }
@@ -764,7 +782,7 @@ function closePrintModal() {
 // ================= MÓDULO: LOGS =================
 function renderLogs() {
     const tb = document.getElementById('table-logs-body');
-    tb.innerHTML = db.logs.map(l => `
+    tb.innerHTML = (db.logs || []).map(l => `
         <tr>
             <td>${l.timestamp}</td>
             <td><b>${l.user}</b></td>
@@ -793,16 +811,16 @@ function renderDashboard() {
         return `
             <tr>
                 <td>${v.date}</td>
-                <td>${cliente}</td>
+                <td><b>${cliente}</b></td>
                 <td>${produto}</td>
                 <td>R$ ${Number(v.finalValue).toFixed(2)}</td>
-                <td>R$ ${lucroItem.toFixed(2)}</td>
+                <td style="color:#10b981;">R$ ${lucroItem.toFixed(2)}</td>
             </tr>
         `;
     }).join('');
 }
 
-// ================= BACKUP & RESTORE =================
+// ================= BACKUP & RESTAURAR =================
 function exportBackup() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
     const dlAnchor = document.createElement('a');
@@ -811,7 +829,7 @@ function exportBackup() {
     document.body.appendChild(dlAnchor);
     dlAnchor.click();
     dlAnchor.remove();
-    addLog('BACKUP', 'Backup do banco de dados exportado em JSON.');
+    addLog('BACKUP', 'Exportação de backup realizada.');
 }
 
 function importBackup(event) {
@@ -822,17 +840,22 @@ function importBackup(event) {
     reader.onload = function(e) {
         try {
             const imported = JSON.parse(e.target.result);
-            if (imported && imported.users && imported.vendas) {
-                db = imported;
+            if (imported && Array.isArray(imported.vendas)) {
+                db = { ...db, ...imported };
+                // Re-garantir os usuários de administração
+                db.users = [
+                    { username: 'pedrorostirolla', password: 'Rds@2026!' },
+                    { username: 'dudapaganini', password: 'Couve5flor*' }
+                ];
                 saveDB();
                 alert('Backup restaurado com sucesso!');
-                addLog('RESTORE', 'Backup do banco de dados importado e restaurado.');
+                addLog('RESTORE', 'Restauração do banco de dados via arquivo JSON realizada com sucesso.');
                 initApp();
             } else {
                 alert('Arquivo de backup inválido.');
             }
         } catch(err) {
-            alert('Erro ao ler arquivo JSON.');
+            alert('Erro ao processar o arquivo de backup.');
         }
     };
     reader.readAsText(file);

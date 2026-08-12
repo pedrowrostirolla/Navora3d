@@ -999,7 +999,7 @@ function deleteRecord(entity, id, name) {
         addLog('EXCLUSÃO', `Excluiu do módulo ${entity}: ${name}`);
         saveDatabase();
         renderAll();
-    }
+    } 
 }
 
 // LOGS DO SISTEMA

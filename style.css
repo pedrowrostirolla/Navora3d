@@ -594,7 +594,7 @@ body {
         padding: 20px;
         color: black;
         background: white;
-    }
+    } 
     .receipt-header { text-align: center; margin-bottom: 20px; }
     .receipt-footer { text-align: center; margin-top: 30px; }
 }

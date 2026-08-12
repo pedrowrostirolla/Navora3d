@@ -62,7 +62,7 @@
             </nav>
 
             <div class="sidebar-footer">
-                <button id="btn-logs" class="btn btn-secondary btn-sm btn-block"><i class="fa-solid fa-list-check"></i> Logs do Sistema</button>
+                <button id="btn-logs" class="btn btn-secondary btn-sm btn-block" onclick="openModal('modal-logs')"><i class="fa-solid fa-list-check"></i> Logs do Sistema</button>
             </div>
         </aside>
 
@@ -611,32 +611,7 @@
         </div>
     </div>
 
-    <!-- Modal Ajuste de Estoque -->
-    <div id="modal-ajuste-estoque" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>Ajustar Quantidade em Estoque</h3>
-                <button class="close-btn" onclick="closeModal('modal-ajuste-estoque')">&times;</button>
-            </div>
-            <form id="form-ajuste-estoque">
-                <input type="hidden" id="est-prod-id">
-                <div class="form-group">
-                    <label>Produto</label>
-                    <input type="text" id="est-prod-nome" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Nova Quantidade *</label>
-                    <input type="number" id="est-prod-qtd" min="0" required>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-ajuste-estoque')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Atualizar Estoque</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal Suprimentos -->
+    <!-- Modal Suprimento -->
     <div id="modal-suprimento" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -646,15 +621,16 @@
             <form id="form-suprimento">
                 <input type="hidden" id="sup-id">
                 <div class="form-group">
-                    <label>Descrição *</label>
-                    <input type="text" id="sup-descricao" placeholder="Ex: Filamento PLA Azul 1kg" required>
+                    <label>Descrição do Suprimento *</label>
+                    <input type="text" id="sup-descricao" placeholder="Ex: Filamento PLA Preto 1kg" required>
                 </div>
                 <div class="form-group">
                     <label>Tipo *</label>
                     <select id="sup-tipo" required>
                         <option value="Filamento">Filamento</option>
-                        <option value="Componente">Componente</option>
-                        <option value="Outros">Outros</option>
+                        <option value="Resina">Resina</option>
+                        <option value="Insumo">Insumo / Componente</option>
+                        <option value="Embalagem">Embalagem</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -663,31 +639,27 @@
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Quantidade (g ou un) *</label>
-                        <input type="number" id="sup-qtd" min="0" required>
+                        <label>Qtd Atual (g / un) *</label>
+                        <input type="number" id="sup-qtd-atual" required>
                     </div>
                     <div class="form-group">
-                        <label>Alerta Qtd Mínima *</label>
-                        <input type="number" id="sup-qtd-min" min="0" required>
+                        <label>Qtd Mínima (g / un)</label>
+                        <input type="number" id="sup-qtd-minima" value="0">
                     </div>
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Valor (R$) *</label>
-                        <input type="number" step="0.01" id="sup-valor" placeholder="0.00" oninput="calcularTotalSuprimento()" required>
+                        <label>Valor de Custo (R$) *</label>
+                        <input type="number" step="0.01" id="sup-valor" required>
                     </div>
                     <div class="form-group">
                         <label>Frete (R$)</label>
-                        <input type="number" step="0.01" id="sup-frete" value="0" oninput="calcularTotalSuprimento()">
+                        <input type="number" step="0.01" id="sup-frete" value="0">
                     </div>
                     <div class="form-group">
-                        <label>Outros (R$)</label>
-                        <input type="number" step="0.01" id="sup-outros" value="0" oninput="calcularTotalSuprimento()">
+                        <label>Outros Custos (R$)</label>
+                        <input type="number" step="0.01" id="sup-outros" value="0">
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Custo Total Calculado (R$)</label>
-                    <input type="number" step="0.01" id="sup-total" readonly class="highlight-input">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('modal-suprimento')">Cancelar</button>
@@ -697,11 +669,11 @@
         </div>
     </div>
 
-    <!-- Modal Logs -->
+    <!-- Modal Logs do Sistema -->
     <div id="modal-logs" class="modal-overlay">
         <div class="modal-card modal-lg">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-list-check"></i> Logs de Auditoria do Sistema</h3>
+                <h3><i class="fa-solid fa-list-check"></i> Logs do Sistema</h3>
                 <button class="close-btn" onclick="closeModal('modal-logs')">&times;</button>
             </div>
             <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -709,32 +681,15 @@
                     <thead>
                         <tr>
                             <th>Data/Hora</th>
-                            <th>Usuário</th>
-                            <th>Ação</th>
-                            <th>Detalhes</th>
+                            <th>Ação Realizada</th>
                         </tr>
                     </thead>
                     <tbody id="body-logs"></tbody>
                 </table>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modal-logs')">Fechar</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-logs')">Fechar</button>
             </div>
-        </div>
-    </div>
-
-    <!-- ÁREA OCULTA APENAS PARA IMPRESSÃO DE COMPROVANTE PDF DE VENDA -->
-    <div id="print-receipt" class="print-receipt-container">
-        <div class="receipt-header">
-            <h2>NAVORA 3D</h2>
-            <p>Sua ideia em três dimensões.</p>
-            <hr>
-            <h3>COMPROVANTE DE VENDA / IMPRESSÃO 3D</h3>
-        </div>
-        <div id="receipt-body"></div>
-        <div class="receipt-footer">
-            <hr>
-            <p>Obrigado por escolher a Navora 3D!</p>
         </div>
     </div>
 

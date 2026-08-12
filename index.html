@@ -364,7 +364,15 @@
                                     <select id="venda-produto" onchange="autopreencherValorProduto()" required></select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="venda-quantidade">Quantidade *</label>
+                                    <label for="venda-suprimento">Suprimento Utilizado *</label>
+                                    <select id="venda-suprimento" onchange="atualizarFornecedorSuprimentoVenda()" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-suprimento-fornecedor">Fornecedor do Suprimento</label>
+                                    <input type="text" id="venda-suprimento-fornecedor" readonly class="highlight-input" placeholder="Selecione um suprimento">
+                                </div>
+                                <div class="form-group">
+                                    <label for="venda-quantidade">Quantidade de Produtos *</label>
                                     <input type="number" id="venda-quantidade" value="1" min="1" oninput="calcularValorFinalVenda()" required>
                                 </div>
                                 <div class="form-group">
@@ -372,7 +380,7 @@
                                     <select id="venda-material" required></select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="venda-gramas">Gramas Utilizadas (g) *</label>
+                                    <label for="venda-gramas">Gramas Utilizadas (g) * (Debitará do Suprimento)</label>
                                     <input type="number" id="venda-gramas" placeholder="Ex: 150" min="0" required>
                                 </div>
                                 <div class="form-group">
@@ -655,7 +663,7 @@
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Quantidade *</label>
+                        <label>Quantidade (g ou un) *</label>
                         <input type="number" id="sup-qtd" min="0" required>
                     </div>
                     <div class="form-group">

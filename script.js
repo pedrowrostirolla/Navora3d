@@ -37,7 +37,7 @@ const INITIAL_DB = {
         '2': 2
     },
     suprimentos: [
-        { id: '1', descricao: 'Filamento PLA Preto 1kg', tipo: 'Filamento', fornecedorId: '1', qtd: 3, qtdMin: 1, valor: 90.00, frete: 15.00, outros: 0.00, total: 105.00 }
+        { id: '1', descricao: 'Filamento PLA Preto 1kg', tipo: 'Filamento', fornecedorId: '1', qtd: 1000, qtdMin: 200, valor: 90.00, frete: 15.00, outros: 0.00, total: 105.00 }
     ],
     vendas: [
         {
@@ -45,6 +45,7 @@ const INITIAL_DB = {
             data: '2026-08-10',
             clienteId: '1',
             produtoId: '1',
+            suprimentoId: '1',
             quantidade: 2,
             materialId: '1',
             gramas: 120,
@@ -299,8 +300,8 @@ function setupEventListeners() {
         const descricao = document.getElementById('sup-descricao').value;
         const tipo = document.getElementById('sup-tipo').value;
         const fornecedorId = document.getElementById('sup-fornecedor').value;
-        const qtd = parseInt(document.getElementById('sup-qtd').value) || 0;
-        const qtdMin = parseInt(document.getElementById('sup-qtd-min').value) || 0;
+        const qtd = parseFloat(document.getElementById('sup-qtd').value) || 0;
+        const qtdMin = parseFloat(document.getElementById('sup-qtd-min').value) || 0;
         const valor = parseFloat(document.getElementById('sup-valor').value) || 0;
         const frete = parseFloat(document.getElementById('sup-frete').value) || 0;
         const outros = parseFloat(document.getElementById('sup-outros').value) || 0;
@@ -325,6 +326,7 @@ function setupEventListeners() {
         e.preventDefault();
         const clienteId = document.getElementById('venda-cliente').value;
         const produtoId = document.getElementById('venda-produto').value;
+        const suprimentoId = document.getElementById('venda-suprimento').value;
         const quantidade = parseInt(document.getElementById('venda-quantidade').value) || 1;
         const materialId = document.getElementById('venda-material').value;
         const gramas = parseFloat(document.getElementById('venda-gramas').value) || 0;
@@ -340,6 +342,7 @@ function setupEventListeners() {
             data: new Date().toISOString().split('T')[0],
             clienteId,
             produtoId,
+            suprimentoId,
             quantidade,
             materialId,
             gramas,
@@ -353,9 +356,22 @@ function setupEventListeners() {
 
         db.vendas.unshift(novaVenda);
 
-        // Dar baixa no estoque do produto, se houver
+        // Debitar estoque de produtos acabados (se houver)
         if (db.estoque[produtoId] !== undefined && db.estoque[produtoId] >= quantidade) {
             db.estoque[produtoId] -= quantidade;
+        }
+
+        // DEBITAR A QUANTIDADE DO SUPRIMENTO VINCULADO
+        const supIndex = db.suprimentos.findIndex(s => s.id === suprimentoId);
+        if (supIndex !== -1) {
+            const sup = db.suprimentos[supIndex];
+            // Se a quantidade do suprimento estiver cadastrada em Unidades/Kg (<= 50), converte gramas para Kg.
+            // Se estiver em gramas (> 50), abate diretamente.
+            let consumo = gramas;
+            if (sup.qtd <= 50) {
+                consumo = gramas / 1000;
+            }
+            db.suprimentos[supIndex].qtd = Math.max(0, Number((sup.qtd - consumo).toFixed(2)));
         }
 
         const prod = db.produtos.find(p => p.id === produtoId);
@@ -363,7 +379,7 @@ function setupEventListeners() {
 
         saveDatabase();
         document.getElementById('form-venda').reset();
-        alert('Venda registrada com sucesso!');
+        alert('Venda registrada e estoque de suprimento atualizado com sucesso!');
         renderAll();
     });
 }
@@ -423,7 +439,26 @@ function renderSelectDropdowns() {
     selectProdVenda.innerHTML = prodOptions;
     selectProdFin.innerHTML = `<option value="">Todos os Produtos</option>` + prodOptions;
 
+    // Select de Suprimentos (Vendas)
+    const selectSupVenda = document.getElementById('venda-suprimento');
+    if (selectSupVenda) {
+        selectSupVenda.innerHTML = db.suprimentos.map(s => `<option value="${s.id}">${s.descricao} (Disponível: ${s.qtd})</option>`).join('');
+        atualizarFornecedorSuprimentoVenda();
+    }
+
     autopreencherValorProduto();
+}
+
+// ATUALIZAR FORNECEDOR DO SUPRIMENTO NA TELA DE VENDA
+function atualizarFornecedorSuprimentoVenda() {
+    const supId = document.getElementById('venda-suprimento').value;
+    const sup = db.suprimentos.find(s => s.id === supId);
+    if (sup) {
+        const forn = db.fornecedores.find(f => f.id === sup.fornecedorId);
+        document.getElementById('venda-suprimento-fornecedor').value = forn ? forn.nome : 'Não informado';
+    } else {
+        document.getElementById('venda-suprimento-fornecedor').value = '';
+    }
 }
 
 function autopreencherValorProduto() {
@@ -767,6 +802,8 @@ function imprimirComprovantePDF(vendaId) {
     const cli = db.clientes.find(c => c.id === v.clienteId);
     const prod = db.produtos.find(p => p.id === v.produtoId);
     const mat = db.materiais.find(m => m.id === v.materialId);
+    const sup = db.suprimentos.find(s => s.id === v.suprimentoId);
+    const fornSup = sup ? db.fornecedores.find(f => f.id === sup.fornecedorId) : null;
 
     const receiptHtml = `
         <p><strong>Número da Venda:</strong> #${v.id}</p>
@@ -775,8 +812,9 @@ function imprimirComprovantePDF(vendaId) {
         <p><strong>Contato:</strong> ${cli ? cli.telefone : 'N/A'}</p>
         <hr>
         <p><strong>Produto:</strong> ${prod ? prod.descricao : 'N/A'}</p>
+        <p><strong>Suprimento Utilizado:</strong> ${sup ? sup.descricao : 'N/A'} (Fornecedor: ${fornSup ? fornSup.nome : 'N/A'})</p>
         <p><strong>Material:</strong> ${mat ? mat.nome : 'N/A'}</p>
-        <p><strong>Quantidade:</strong> ${v.quantidade}</p>
+        <p><strong>Quantidade de Peças:</strong> ${v.quantidade}</p>
         <p><strong>Gramas Utilizadas:</strong> ${v.gramas}g</p>
         <p><strong>Cores:</strong> ${v.cores}</p>
         <p><strong>Tempo de Criação:</strong> ${v.tempo}</p>

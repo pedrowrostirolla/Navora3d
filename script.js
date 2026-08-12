@@ -29,8 +29,8 @@ const INITIAL_DB = {
         { id: '3', nome: 'ABS' }
     ],
     produtos: [
-        { id: '1', descricao: 'Vaso Geométrico 15cm', categoriaId: '1', materialId: '1', fornecedorId: '1', precoSugerido: 45.00 },
-        { id: '2', descricao: 'Suporte para Headset', categoriaId: '2', materialId: '2', fornecedorId: '2', precoSugerido: 65.00 }
+        { id: '1', descricao: 'Vaso Geométrico 15cm', categoriaId: '1', materialId: '1', qtdSuprimentos: 120, tempoProducao: '5h', precoSugerido: 45.00 },
+        { id: '2', descricao: 'Suporte para Headset', categoriaId: '2', materialId: '2', qtdSuprimentos: 200, tempoProducao: '8h', precoSugerido: 65.00 }
     ],
     estoque: {
         '1': 5,
@@ -268,16 +268,17 @@ function setupEventListeners() {
         const descricao = document.getElementById('prod-descricao').value;
         const categoriaId = document.getElementById('prod-categoria').value;
         const materialId = document.getElementById('prod-material').value;
-        const fornecedorId = document.getElementById('prod-fornecedor').value;
+        const qtdSuprimentos = parseFloat(document.getElementById('prod-qtd-suprimentos').value) || 0;
+        const tempoProducao = document.getElementById('prod-tempo-producao').value;
         const precoSugerido = parseFloat(document.getElementById('prod-preco').value) || 0;
 
         if (id) {
             const index = db.produtos.findIndex(p => p.id === id);
-            db.produtos[index] = { id, descricao, categoriaId, materialId, fornecedorId, precoSugerido };
+            db.produtos[index] = { id, descricao, categoriaId, materialId, qtdSuprimentos, tempoProducao, precoSugerido };
             addLog('ALTERAÇÃO', `Produto alterado: ${descricao}`);
         } else {
             const newId = Date.now().toString();
-            db.produtos.push({ id: newId, descricao, categoriaId, materialId, fornecedorId, precoSugerido });
+            db.produtos.push({ id: newId, descricao, categoriaId, materialId, qtdSuprimentos, tempoProducao, precoSugerido });
             db.estoque[newId] = 0; // Inicializa estoque zerado
             addLog('INCLUSÃO', `Produto cadastrado: ${descricao}`);
         }
@@ -460,11 +461,9 @@ function renderSelectDropdowns() {
     selectVendaMat.innerHTML = matOptions;
 
     // Selects de Fornecedores
-    const selectFornProd = document.getElementById('prod-fornecedor');
     const selectFornSup = document.getElementById('sup-fornecedor');
     const selectFornEst = document.getElementById('filtro-estoque-forn');
     const fornOptions = db.fornecedores.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
-    selectFornProd.innerHTML = fornOptions;
     selectFornSup.innerHTML = fornOptions;
     selectFornEst.innerHTML = `<option value="">Todos os Fornecedores</option>` + fornOptions;
 
@@ -722,14 +721,14 @@ function renderProdutos() {
     document.getElementById('body-produtos').innerHTML = db.produtos.map(p => {
         const cat = db.categorias.find(c => c.id === p.categoriaId);
         const mat = db.materiais.find(m => m.id === p.materialId);
-        const forn = db.fornecedores.find(f => f.id === p.fornecedorId);
 
         return `
             <tr>
                 <td><strong>${p.descricao}</strong></td>
                 <td>${cat ? cat.nome : '-'}</td>
                 <td>${mat ? mat.nome : '-'}</td>
-                <td>${forn ? forn.nome : '-'}</td>
+                <td>${p.qtdSuprimentos ? p.qtdSuprimentos + ' g' : '-'}</td>
+                <td>${p.tempoProducao || '-'}</td>
                 <td>R$ ${p.precoSugerido ? p.precoSugerido.toFixed(2) : '0.00'}</td>
                 <td>
                     <button class="btn btn-outline btn-sm" onclick="editProduto('${p.id}')"><i class="fa-solid fa-pen"></i></button>
@@ -747,7 +746,8 @@ function editProduto(id) {
     document.getElementById('prod-descricao').value = p.descricao;
     document.getElementById('prod-categoria').value = p.categoriaId;
     document.getElementById('prod-material').value = p.materialId;
-    document.getElementById('prod-fornecedor').value = p.fornecedorId;
+    document.getElementById('prod-qtd-suprimentos').value = p.qtdSuprimentos || '';
+    document.getElementById('prod-tempo-producao').value = p.tempoProducao || '';
     document.getElementById('prod-preco').value = p.precoSugerido;
     document.getElementById('modal-produto-title').innerText = 'Editar Produto';
     openModal('modal-produto');

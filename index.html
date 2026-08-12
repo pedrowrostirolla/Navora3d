@@ -103,7 +103,7 @@
                 <section id="module-dashboard" class="module-section active">
                     <div class="section-header">
                         <h2><i class="fa-solid fa-chart-pie"></i> Dashboard Geral</h2>
-                        <p>Visão geral dos resultados da Navora 3D</p>
+                        <p>Visão geral dos resultados faturados e recebidos da Navora 3D</p>
                     </div>
 
                     <div class="metrics-grid">
@@ -124,7 +124,7 @@
                         <div class="metric-card">
                             <div class="metric-icon dark-blue"><i class="fa-solid fa-receipt"></i></div>
                             <div class="metric-data">
-                                <span>Total de Vendas</span>
+                                <span>Vendas Faturadas/Recebidas</span>
                                 <h3 id="dash-qtd-vendas">0</h3>
                             </div>
                         </div>
@@ -132,7 +132,7 @@
 
                     <div class="card shadow mt-4">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-clock-rotate-left"></i> Últimas Vendas Realizadas</h3>
+                            <h3><i class="fa-solid fa-clock-rotate-left"></i> Últimas Vendas Financeiras</h3>
                         </div>
                         <div class="table-responsive">
                             <table class="data-table">
@@ -141,6 +141,7 @@
                                         <th>Data</th>
                                         <th>Cliente</th>
                                         <th>Produto</th>
+                                        <th>Status</th>
                                         <th>Valor</th>
                                         <th>Lucro Est.</th>
                                     </tr>
@@ -178,8 +179,10 @@
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
+                                        <th>CPF / CNPJ</th>
                                         <th>Telefone/WhatsApp</th>
                                         <th>E-mail</th>
+                                        <th>Endereço</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
@@ -199,8 +202,10 @@
                                 <thead>
                                     <tr>
                                         <th>Nome / Razão Social</th>
+                                        <th>CNPJ / CPF</th>
                                         <th>Contato</th>
-                                        <th>Observação</th>
+                                        <th>E-mail</th>
+                                        <th>Cidade/UF</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
@@ -348,11 +353,11 @@
                 <!-- 6. MÓDULO VENDAS -->
                 <section id="module-vendas" class="module-section">
                     <div class="section-header">
-                        <h2><i class="fa-solid fa-cart-shopping"></i> Registrar Venda</h2>
-                        <p>Lance novas encomendas e pedidos de impressão</p>
+                        <h2><i class="fa-solid fa-cart-shopping"></i> Módulo de Vendas</h2>
+                        <p>Lance novas encomendas e acompanhe os pedidos realizados</p>
                     </div>
 
-                    <div class="card p-4 shadow">
+                    <div class="card p-4 shadow mb-4">
                         <form id="form-venda">
                             <div class="form-grid">
                                 <div class="form-group">
@@ -403,6 +408,14 @@
                                     <label for="venda-valor-final">Valor Final Calculado (R$)</label>
                                     <input type="number" step="0.01" id="venda-valor-final" readonly class="highlight-input">
                                 </div>
+                                <div class="form-group">
+                                    <label for="venda-status">Status da Venda / Financeiro *</label>
+                                    <select id="venda-status" required>
+                                        <option value="pendente">Pendente (Apenas Vendas)</option>
+                                        <option value="faturado">Faturado (Enviar ao Financeiro)</option>
+                                        <option value="recebido">Recebido (Enviar ao Financeiro)</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div class="form-group mt-3">
@@ -415,13 +428,38 @@
                             </button>
                         </form>
                     </div>
+
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-list"></i> Todas as Vendas Registradas</h3>
+                        </div>
+                        <div class="p-3 toolbar">
+                            <input type="text" class="filter-input" placeholder="Filtrar vendas..." onkeyup="filterTable('tbl-listagem-vendas', this.value)">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="tbl-listagem-vendas">
+                                <thead>
+                                    <tr>
+                                        <th>ID Venda</th>
+                                        <th>Data</th>
+                                        <th>Cliente</th>
+                                        <th>Produto</th>
+                                        <th>Valor Final</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="body-listagem-vendas"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- 7. MÓDULO FINANCEIRO -->
                 <section id="module-financeiro" class="module-section">
                     <div class="section-header">
                         <h2><i class="fa-solid fa-wallet"></i> Histórico Financeiro</h2>
-                        <p>Consulte relatórios, vendas realizadas e exporte comprovantes em PDF</p>
+                        <p>Consulte vendas faturadas ou recebidas, relatórios e exporte comprovantes em PDF</p>
                     </div>
 
                     <div class="card p-3 mb-4 shadow">
@@ -459,6 +497,7 @@
                                     <th>Cliente</th>
                                     <th>Produto</th>
                                     <th>Qtd</th>
+                                    <th>Status</th>
                                     <th>Valor Final</th>
                                     <th>Ações</th>
                                 </tr>
@@ -488,12 +527,24 @@
                     <input type="text" id="cli-nome" required>
                 </div>
                 <div class="form-group">
+                    <label>CPF / CNPJ</label>
+                    <input type="text" id="cli-cpf-cnpj" placeholder="000.000.000-00">
+                </div>
+                <div class="form-group">
                     <label>Telefone / WhatsApp</label>
                     <input type="text" id="cli-telefone">
                 </div>
                 <div class="form-group">
                     <label>E-mail</label>
                     <input type="email" id="cli-email">
+                </div>
+                <div class="form-group">
+                    <label>Endereço Completo</label>
+                    <input type="text" id="cli-endereco" placeholder="Rua, Número, Bairro, Cidade - UF">
+                </div>
+                <div class="form-group">
+                    <label>Observações</label>
+                    <textarea id="cli-obs" rows="2" placeholder="Informações adicionais do cliente..."></textarea>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('modal-cliente')">Cancelar</button>
@@ -517,8 +568,24 @@
                     <input type="text" id="forn-nome" required>
                 </div>
                 <div class="form-group">
+                    <label>CNPJ / CPF</label>
+                    <input type="text" id="forn-cnpj" placeholder="00.000.000/0001-00">
+                </div>
+                <div class="form-group">
                     <label>Contato / Telefone</label>
                     <input type="text" id="forn-contato">
+                </div>
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="forn-email">
+                </div>
+                <div class="form-group">
+                    <label>Cidade / UF</label>
+                    <input type="text" id="forn-cidade" placeholder="Ex: São Paulo / SP">
+                </div>
+                <div class="form-group">
+                    <label>Endereço</label>
+                    <input type="text" id="forn-endereco">
                 </div>
                 <div class="form-group">
                     <label>Observação</label>
@@ -692,6 +759,35 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('modal-suprimento')">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Status Venda -->
+    <div id="modal-status-venda" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Atualizar Status da Venda</h3>
+                <button class="close-btn" onclick="closeModal('modal-status-venda')">&times;</button>
+            </div>
+            <form id="form-status-venda">
+                <input type="hidden" id="status-venda-id">
+                <div class="form-group">
+                    <label>Venda</label>
+                    <input type="text" id="status-venda-nome" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Status *</label>
+                    <select id="status-venda-select" required>
+                        <option value="pendente">Pendente (Apenas Vendas)</option>
+                        <option value="faturado">Faturado (Enviar ao Financeiro)</option>
+                        <option value="recebido">Recebido (Enviar ao Financeiro)</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-status-venda')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Atualizar Status</button>
                 </div>
             </form>
         </div>

@@ -11,12 +11,12 @@ const INITIAL_DB = {
         { user: 'dudapaganini', pass: 'Couve5flor*', name: 'Duda Paganini' }
     ],
     clientes: [
-        { id: '1', nome: 'Lucas Andrade', telefone: '(47) 99887-1122', email: 'lucas@email.com' },
-        { id: '2', nome: 'Mariana Souza', telefone: '(47) 99112-3344', email: 'mariana@email.com' }
+        { id: '1', nome: 'Lucas Andrade', cpfCnpj: '123.456.789-00', telefone: '(47) 99887-1122', email: 'lucas@email.com', endereco: 'Rua das Flores, 123 - Centro', obs: 'Cliente preferencial' },
+        { id: '2', nome: 'Mariana Souza', cpfCnpj: '987.654.321-11', telefone: '(47) 99112-3344', email: 'mariana@email.com', endereco: 'Av. Brasil, 500 - Jardim', obs: '' }
     ],
     fornecedores: [
-        { id: '1', nome: 'Voolt3D', contato: '(11) 3344-5566', obs: 'Filamentos PLA e PETG' },
-        { id: '2', nome: '3D Fila', contato: '(11) 98877-6655', obs: 'Insumos gerais' }
+        { id: '1', nome: 'Voolt3D', cnpj: '12.345.678/0001-90', contato: '(11) 3344-5566', email: 'vendas@voolt3d.com.br', cidade: 'São Paulo / SP', endereco: 'Rua da Indústria, 40', obs: 'Filamentos PLA e PETG' },
+        { id: '2', nome: '3D Fila', cnpj: '98.765.432/0001-10', contato: '(11) 98877-6655', email: 'contato@3dfila.com.br', cidade: 'Belo Horizonte / MG', endereco: 'Av. dos Filamentos, 100', obs: 'Insumos gerais' }
     ],
     categorias: [
         { id: '1', nome: 'Decoração' },
@@ -54,6 +54,7 @@ const INITIAL_DB = {
             valorUnit: 45.00,
             desconto: 0,
             valorFinal: 90.00,
+            status: 'recebido', // 'pendente', 'faturado', 'recebido'
             observacao: 'Cliente solicitou acabamento fosco'
         }
     ],
@@ -169,21 +170,24 @@ function setupEventListeners() {
 
     // SUBMITS DE FORMULÁRIOS
 
-    // Form Cliente
+    // Form Cliente (Aprimorado com mais dados)
     document.getElementById('form-cliente').addEventListener('submit', (e) => {
         e.preventDefault();
         const id = document.getElementById('cli-id').value;
         const nome = document.getElementById('cli-nome').value;
+        const cpfCnpj = document.getElementById('cli-cpf-cnpj').value;
         const telefone = document.getElementById('cli-telefone').value;
         const email = document.getElementById('cli-email').value;
+        const endereco = document.getElementById('cli-endereco').value;
+        const obs = document.getElementById('cli-obs').value;
 
         if (id) {
             const index = db.clientes.findIndex(c => c.id === id);
-            db.clientes[index] = { id, nome, telefone, email };
+            db.clientes[index] = { id, nome, cpfCnpj, telefone, email, endereco, obs };
             addLog('ALTERAÇÃO', `Cliente alterado: ${nome}`);
         } else {
             const newId = Date.now().toString();
-            db.clientes.push({ id: newId, nome, telefone, email });
+            db.clientes.push({ id: newId, nome, cpfCnpj, telefone, email, endereco, obs });
             addLog('INCLUSÃO', `Cliente cadastrado: ${nome}`);
         }
         saveDatabase();
@@ -191,21 +195,25 @@ function setupEventListeners() {
         renderAll();
     });
 
-    // Form Fornecedor
+    // Form Fornecedor (Aprimorado com mais dados)
     document.getElementById('form-fornecedor').addEventListener('submit', (e) => {
         e.preventDefault();
         const id = document.getElementById('forn-id').value;
         const nome = document.getElementById('forn-nome').value;
+        const cnpj = document.getElementById('forn-cnpj').value;
         const contato = document.getElementById('forn-contato').value;
+        const email = document.getElementById('forn-email').value;
+        const cidade = document.getElementById('forn-cidade').value;
+        const endereco = document.getElementById('forn-endereco').value;
         const obs = document.getElementById('forn-obs').value;
 
         if (id) {
             const index = db.fornecedores.findIndex(f => f.id === id);
-            db.fornecedores[index] = { id, nome, contato, obs };
+            db.fornecedores[index] = { id, nome, cnpj, contato, email, cidade, endereco, obs };
             addLog('ALTERAÇÃO', `Fornecedor alterado: ${nome}`);
         } else {
             const newId = Date.now().toString();
-            db.fornecedores.push({ id: newId, nome, contato, obs });
+            db.fornecedores.push({ id: newId, nome, cnpj, contato, email, cidade, endereco, obs });
             addLog('INCLUSÃO', `Fornecedor cadastrado: ${nome}`);
         }
         saveDatabase();
@@ -321,7 +329,7 @@ function setupEventListeners() {
         renderAll();
     });
 
-    // Form Vendas
+    // Form Vendas com Flag de Status
     document.getElementById('form-venda').addEventListener('submit', (e) => {
         e.preventDefault();
         const clienteId = document.getElementById('venda-cliente').value;
@@ -335,6 +343,7 @@ function setupEventListeners() {
         const valorUnit = parseFloat(document.getElementById('venda-valor-unit').value) || 0;
         const desconto = parseFloat(document.getElementById('venda-desconto').value) || 0;
         const valorFinal = valorUnit * quantidade * (1 - (desconto / 100));
+        const status = document.getElementById('venda-status').value;
         const observacao = document.getElementById('venda-obs').value;
 
         const novaVenda = {
@@ -351,6 +360,7 @@ function setupEventListeners() {
             valorUnit,
             desconto,
             valorFinal,
+            status,
             observacao
         };
 
@@ -365,8 +375,6 @@ function setupEventListeners() {
         const supIndex = db.suprimentos.findIndex(s => s.id === suprimentoId);
         if (supIndex !== -1) {
             const sup = db.suprimentos[supIndex];
-            // Se a quantidade do suprimento estiver cadastrada em Unidades/Kg (<= 50), converte gramas para Kg.
-            // Se estiver em gramas (> 50), abate diretamente.
             let consumo = gramas;
             if (sup.qtd <= 50) {
                 consumo = gramas / 1000;
@@ -375,12 +383,28 @@ function setupEventListeners() {
         }
 
         const prod = db.produtos.find(p => p.id === produtoId);
-        addLog('INCLUSÃO', `Venda realizada #${novaVenda.id} - Produto: ${prod ? prod.descricao : ''}`);
+        addLog('INCLUSÃO', `Venda registrada #${novaVenda.id} - Status: ${status.toUpperCase()} - Produto: ${prod ? prod.descricao : ''}`);
 
         saveDatabase();
         document.getElementById('form-venda').reset();
-        alert('Venda registrada e estoque de suprimento atualizado com sucesso!');
+        alert('Venda registrada com sucesso!');
         renderAll();
+    });
+
+    // Form Atualização rápida de Status da Venda
+    document.getElementById('form-status-venda').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const vendaId = document.getElementById('status-venda-id').value;
+        const novoStatus = document.getElementById('status-venda-select').value;
+
+        const index = db.vendas.findIndex(v => v.id === vendaId);
+        if (index !== -1) {
+            db.vendas[index].status = novoStatus;
+            addLog('ALTERAÇÃO', `Status da Venda #${vendaId} alterado para ${novoStatus.toUpperCase()}`);
+            saveDatabase();
+            closeModal('modal-status-venda');
+            renderAll();
+        }
     });
 }
 
@@ -399,6 +423,7 @@ function renderAll() {
     renderProdutos();
     renderEstoque();
     renderSuprimentos();
+    renderVendas();
     renderFinanceiro();
     renderSelectDropdowns();
 }
@@ -488,24 +513,34 @@ function calcularTotalSuprimento() {
     document.getElementById('sup-total').value = (v + f + o).toFixed(2);
 }
 
-// 1. DASHBOARD
+// HELPER BADGE DE STATUS DA VENDA
+function getStatusBadge(status) {
+    if (status === 'faturado') {
+        return `<span class="badge badge-warning">Faturado</span>`;
+    } else if (status === 'recebido') {
+        return `<span class="badge badge-success">Recebido</span>`;
+    }
+    return `<span class="badge badge-danger">Pendente</span>`;
+}
+
+// 1. DASHBOARD (SÓ CONTABILIZA FATURADO OU RECEBIDO)
 function renderDashboard() {
     let faturamento = 0;
     let lucroEstimado = 0;
+    const vendasFinanceiro = db.vendas.filter(v => v.status === 'faturado' || v.status === 'recebido');
 
-    db.vendas.forEach(v => {
+    vendasFinanceiro.forEach(v => {
         faturamento += v.valorFinal;
-        // Estimativa de custo baseada na gramatura (Média R$ 0.10/grama) + R$ 2.00 energia/desgaste
         const custoEstimado = (v.gramas * 0.10) + 2.00;
         lucroEstimado += (v.valorFinal - custoEstimado);
     });
 
     document.getElementById('dash-faturamento').innerText = `R$ ${faturamento.toFixed(2)}`;
     document.getElementById('dash-lucro').innerText = `R$ ${lucroEstimado.toFixed(2)}`;
-    document.getElementById('dash-qtd-vendas').innerText = db.vendas.length;
+    document.getElementById('dash-qtd-vendas').innerText = vendasFinanceiro.length;
 
     const bodyUltimas = document.getElementById('dash-ultimas-vendas');
-    bodyUltimas.innerHTML = db.vendas.slice(0, 5).map(v => {
+    bodyUltimas.innerHTML = vendasFinanceiro.slice(0, 5).map(v => {
         const cli = db.clientes.find(c => c.id === v.clienteId);
         const prod = db.produtos.find(p => p.id === v.produtoId);
         const custoEst = (v.gramas * 0.10) + 2.00;
@@ -516,6 +551,7 @@ function renderDashboard() {
                 <td>${v.data}</td>
                 <td>${cli ? cli.nome : 'N/A'}</td>
                 <td>${prod ? prod.descricao : 'N/A'}</td>
+                <td>${getStatusBadge(v.status)}</td>
                 <td>R$ ${v.valorFinal.toFixed(2)}</td>
                 <td class="text-success" style="color: var(--success); font-weight:600;">R$ ${lucro.toFixed(2)}</td>
             </tr>
@@ -527,9 +563,11 @@ function renderDashboard() {
 function renderClientes() {
     document.getElementById('body-clientes').innerHTML = db.clientes.map(c => `
         <tr>
-            <td>${c.nome}</td>
+            <td><strong>${c.nome}</strong></td>
+            <td>${c.cpfCnpj || '-'}</td>
             <td>${c.telefone || '-'}</td>
             <td>${c.email || '-'}</td>
+            <td>${c.endereco || '-'}</td>
             <td>
                 <button class="btn btn-outline btn-sm" onclick="editCliente('${c.id}')"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn btn-danger btn-sm" onclick="deleteRecord('clientes', '${c.id}', '${c.nome}')"><i class="fa-solid fa-trash"></i></button>
@@ -543,8 +581,11 @@ function editCliente(id) {
     if (!c) return;
     document.getElementById('cli-id').value = c.id;
     document.getElementById('cli-nome').value = c.nome;
-    document.getElementById('cli-telefone').value = c.telefone;
-    document.getElementById('cli-email').value = c.email;
+    document.getElementById('cli-cpf-cnpj').value = c.cpfCnpj || '';
+    document.getElementById('cli-telefone').value = c.telefone || '';
+    document.getElementById('cli-email').value = c.email || '';
+    document.getElementById('cli-endereco').value = c.endereco || '';
+    document.getElementById('cli-obs').value = c.obs || '';
     document.getElementById('modal-cliente-title').innerText = 'Editar Cliente';
     openModal('modal-cliente');
 }
@@ -552,9 +593,11 @@ function editCliente(id) {
 function renderFornecedores() {
     document.getElementById('body-fornecedores').innerHTML = db.fornecedores.map(f => `
         <tr>
-            <td>${f.nome}</td>
+            <td><strong>${f.nome}</strong></td>
+            <td>${f.cnpj || '-'}</td>
             <td>${f.contato || '-'}</td>
-            <td>${f.obs || '-'}</td>
+            <td>${f.email || '-'}</td>
+            <td>${f.cidade || '-'}</td>
             <td>
                 <button class="btn btn-outline btn-sm" onclick="editFornecedor('${f.id}')"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn btn-danger btn-sm" onclick="deleteRecord('fornecedores', '${f.id}', '${f.nome}')"><i class="fa-solid fa-trash"></i></button>
@@ -568,8 +611,12 @@ function editFornecedor(id) {
     if (!f) return;
     document.getElementById('forn-id').value = f.id;
     document.getElementById('forn-nome').value = f.nome;
-    document.getElementById('forn-contato').value = f.contato;
-    document.getElementById('forn-obs').value = f.obs;
+    document.getElementById('forn-cnpj').value = f.cnpj || '';
+    document.getElementById('forn-contato').value = f.contato || '';
+    document.getElementById('forn-email').value = f.email || '';
+    document.getElementById('forn-cidade').value = f.cidade || '';
+    document.getElementById('forn-endereco').value = f.endereco || '';
+    document.getElementById('forn-obs').value = f.obs || '';
     document.getElementById('modal-fornecedor-title').innerText = 'Editar Fornecedor';
     openModal('modal-fornecedor');
 }
@@ -747,7 +794,41 @@ function editSuprimento(id) {
     openModal('modal-suprimento');
 }
 
-// 6. FINANCEIRO
+// 6. MÓDULO DE VENDAS (LISTAGEM GERAL DE TODAS AS VENDAS)
+function renderVendas() {
+    document.getElementById('body-listagem-vendas').innerHTML = db.vendas.map(v => {
+        const cli = db.clientes.find(c => c.id === v.clienteId);
+        const prod = db.produtos.find(p => p.id === v.produtoId);
+
+        return `
+            <tr>
+                <td><strong>#${v.id}</strong></td>
+                <td>${v.data}</td>
+                <td>${cli ? cli.nome : 'N/A'}</td>
+                <td>${prod ? prod.descricao : 'N/A'}</td>
+                <td><strong>R$ ${v.valorFinal.toFixed(2)}</strong></td>
+                <td>${getStatusBadge(v.status)}</td>
+                <td>
+                    <button class="btn btn-outline btn-sm" onclick="abrirModalStatusVenda('${v.id}', '${v.status}')" title="Alterar Status">
+                        <i class="fa-solid fa-tag"></i> Alterar Status
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteRecord('vendas', '${v.id}', 'Venda #${v.id}')">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function abrirModalStatusVenda(id, currentStatus) {
+    document.getElementById('status-venda-id').value = id;
+    document.getElementById('status-venda-nome').value = `#${id}`;
+    document.getElementById('status-venda-select').value = currentStatus || 'pendente';
+    openModal('modal-status-venda');
+}
+
+// 7. FINANCEIRO (SÓ MOSTRA VENDAS "FATURADO" OU "RECEBIDO")
 function renderFinanceiro() {
     filtrarFinanceiro();
 }
@@ -759,6 +840,11 @@ function filtrarFinanceiro() {
     const produtoId = document.getElementById('fin-produto').value;
 
     const vendasFiltradas = db.vendas.filter(v => {
+        // REGRA ESSENCIAL: Apenas faturado ou recebido
+        if (v.status !== 'faturado' && v.status !== 'recebido') {
+            return false;
+        }
+
         let matchData = true;
         if (dataInicio && v.data < dataInicio) matchData = false;
         if (dataFim && v.data > dataFim) matchData = false;
@@ -780,6 +866,7 @@ function filtrarFinanceiro() {
                 <td>${cli ? cli.nome : 'N/A'}</td>
                 <td>${prod ? prod.descricao : 'N/A'}</td>
                 <td>${v.quantidade}</td>
+                <td>${getStatusBadge(v.status)}</td>
                 <td><strong>R$ ${v.valorFinal.toFixed(2)}</strong></td>
                 <td>
                     <button class="btn btn-primary btn-sm" onclick="imprimirComprovantePDF('${v.id}')">
@@ -808,7 +895,9 @@ function imprimirComprovantePDF(vendaId) {
     const receiptHtml = `
         <p><strong>Número da Venda:</strong> #${v.id}</p>
         <p><strong>Data:</strong> ${v.data}</p>
+        <p><strong>Status:</strong> ${(v.status || 'pendente').toUpperCase()}</p>
         <p><strong>Cliente:</strong> ${cli ? cli.nome : 'N/A'}</p>
+        <p><strong>CPF/CNPJ:</strong> ${cli ? (cli.cpfCnpj || 'N/A') : 'N/A'}</p>
         <p><strong>Contato:</strong> ${cli ? cli.telefone : 'N/A'}</p>
         <hr>
         <p><strong>Produto:</strong> ${prod ? prod.descricao : 'N/A'}</p>
@@ -895,6 +984,7 @@ function importBackupJSON(e) {
 // MASK & FUNÇÃO DE FILTRO NAS TABELAS
 function filterTable(tableId, query) {
     const table = document.getElementById(tableId);
+    if (!table) return;
     const trs = table.querySelectorAll('tbody tr');
     const q = query.toLowerCase();
 
@@ -911,9 +1001,8 @@ function openModal(modalId) {
 
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
-    // Limpa formulários internos caso existam
     const form = document.querySelector(`#${modalId} form`);
-    if (form && modalId !== 'modal-ajuste-estoque') {
+    if (form && modalId !== 'modal-ajuste-estoque' && modalId !== 'modal-status-venda') {
         form.reset();
         const hiddenId = form.querySelector('input[type="hidden"]');
         if (hiddenId) hiddenId.value = '';

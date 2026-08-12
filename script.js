@@ -45,11 +45,11 @@ const INITIAL_DB = {
             data: '2026-08-10',
             clienteId: '1',
             produtoId: '1',
-            suprimentoId: '1',
+            suprimentosUtilizados: [
+                { suprimentoId: '1', gramas: 120 }
+            ],
             quantidade: 2,
             materialId: '1',
-            gramas: 120,
-            cores: 'Preto, Mármore',
             tempo: '5 horas',
             valorUnit: 45.00,
             desconto: 0,
@@ -170,7 +170,7 @@ function setupEventListeners() {
 
     // SUBMITS DE FORMULÁRIOS
 
-    // Form Cliente (Aprimorado com mais dados)
+    // Form Cliente
     document.getElementById('form-cliente').addEventListener('submit', (e) => {
         e.preventDefault();
         const id = document.getElementById('cli-id').value;
@@ -195,7 +195,7 @@ function setupEventListeners() {
         renderAll();
     });
 
-    // Form Fornecedor (Aprimorado com mais dados)
+    // Form Fornecedor
     document.getElementById('form-fornecedor').addEventListener('submit', (e) => {
         e.preventDefault();
         const id = document.getElementById('forn-id').value;
@@ -329,16 +329,13 @@ function setupEventListeners() {
         renderAll();
     });
 
-    // Form Vendas com Flag de Status
+    // Form Vendas com Suprimentos Múltiplos e Gramas por Item
     document.getElementById('form-venda').addEventListener('submit', (e) => {
         e.preventDefault();
         const clienteId = document.getElementById('venda-cliente').value;
         const produtoId = document.getElementById('venda-produto').value;
-        const suprimentoId = document.getElementById('venda-suprimento').value;
         const quantidade = parseInt(document.getElementById('venda-quantidade').value) || 1;
         const materialId = document.getElementById('venda-material').value;
-        const gramas = parseFloat(document.getElementById('venda-gramas').value) || 0;
-        const cores = document.getElementById('venda-cores').value;
         const tempo = document.getElementById('venda-tempo').value;
         const valorUnit = parseFloat(document.getElementById('venda-valor-unit').value) || 0;
         const desconto = parseFloat(document.getElementById('venda-desconto').value) || 0;
@@ -346,16 +343,34 @@ function setupEventListeners() {
         const status = document.getElementById('venda-status').value;
         const observacao = document.getElementById('venda-obs').value;
 
+        // Captura suprimentos e gramas individualmente por item marcado
+        const suprimentosInputs = document.querySelectorAll('.gramas-suprimento-input');
+        const suprimentosUtilizados = [];
+
+        suprimentosInputs.forEach(input => {
+            const supId = input.getAttribute('data-sup-id');
+            const g = parseFloat(input.value) || 0;
+            if (supId) {
+                suprimentosUtilizados.push({
+                    suprimentoId: supId,
+                    gramas: g
+                });
+            }
+        });
+
+        if (suprimentosUtilizados.length === 0) {
+            alert('Selecione pelo menos um suprimento utilizado na venda.');
+            return;
+        }
+
         const novaVenda = {
             id: 'V' + Math.floor(1000 + Math.random() * 9000),
             data: new Date().toISOString().split('T')[0],
             clienteId,
             produtoId,
-            suprimentoId,
+            suprimentosUtilizados,
             quantidade,
             materialId,
-            gramas,
-            cores,
             tempo,
             valorUnit,
             desconto,
@@ -371,23 +386,26 @@ function setupEventListeners() {
             db.estoque[produtoId] -= quantidade;
         }
 
-        // DEBITAR A QUANTIDADE DO SUPRIMENTO VINCULADO
-        const supIndex = db.suprimentos.findIndex(s => s.id === suprimentoId);
-        if (supIndex !== -1) {
-            const sup = db.suprimentos[supIndex];
-            let consumo = gramas;
-            if (sup.qtd <= 50) {
-                consumo = gramas / 1000;
+        // DEBITAR A QUANTIDADE DO ESTOQUE DE CADA SUPRIMENTO SELECIONADO
+        suprimentosUtilizados.forEach(item => {
+            const supIndex = db.suprimentos.findIndex(s => s.id === item.suprimentoId);
+            if (supIndex !== -1) {
+                const sup = db.suprimentos[supIndex];
+                let consumo = item.gramas;
+                if (sup.qtd <= 50) {
+                    consumo = item.gramas / 1000;
+                }
+                db.suprimentos[supIndex].qtd = Math.max(0, Number((sup.qtd - consumo).toFixed(2)));
             }
-            db.suprimentos[supIndex].qtd = Math.max(0, Number((sup.qtd - consumo).toFixed(2)));
-        }
+        });
 
         const prod = db.produtos.find(p => p.id === produtoId);
         addLog('INCLUSÃO', `Venda registrada #${novaVenda.id} - Status: ${status.toUpperCase()} - Produto: ${prod ? prod.descricao : ''}`);
 
         saveDatabase();
         document.getElementById('form-venda').reset();
-        alert('Venda registrada com sucesso!');
+        atualizarCamposSuprimentosVenda();
+        alert('Venda registrada com sucesso e estoque de suprimentos ajustado!');
         renderAll();
     });
 
@@ -464,26 +482,52 @@ function renderSelectDropdowns() {
     selectProdVenda.innerHTML = prodOptions;
     selectProdFin.innerHTML = `<option value="">Todos os Produtos</option>` + prodOptions;
 
-    // Select de Suprimentos (Vendas)
+    // Select de Suprimentos (Vendas - Múltipla escolha)
     const selectSupVenda = document.getElementById('venda-suprimento');
     if (selectSupVenda) {
         selectSupVenda.innerHTML = db.suprimentos.map(s => `<option value="${s.id}">${s.descricao} (Disponível: ${s.qtd})</option>`).join('');
-        atualizarFornecedorSuprimentoVenda();
+        atualizarCamposSuprimentosVenda();
     }
 
     autopreencherValorProduto();
 }
 
-// ATUALIZAR FORNECEDOR DO SUPRIMENTO NA TELA DE VENDA
-function atualizarFornecedorSuprimentoVenda() {
-    const supId = document.getElementById('venda-suprimento').value;
-    const sup = db.suprimentos.find(s => s.id === supId);
-    if (sup) {
-        const forn = db.fornecedores.find(f => f.id === sup.fornecedorId);
-        document.getElementById('venda-suprimento-fornecedor').value = forn ? forn.nome : 'Não informado';
-    } else {
-        document.getElementById('venda-suprimento-fornecedor').value = '';
+// ATUALIZA OS CAMPOS DE GRAMAS E FORNECEDOR PARA CADA SUPRIMENTO SELECIONADO NA VENDA
+function atualizarCamposSuprimentosVenda() {
+    const selectSup = document.getElementById('venda-suprimento');
+    const selectedOptions = Array.from(selectSup.selectedOptions);
+    const containerGramas = document.getElementById('container-gramas-suprimentos');
+    const inputFornecedores = document.getElementById('venda-suprimento-fornecedor');
+
+    if (selectedOptions.length === 0) {
+        containerGramas.innerHTML = `<small class="text-muted">Selecione ao menos um suprimento acima para preencher o consumo de gramas por item.</small>`;
+        inputFornecedores.value = 'Nenhum suprimento selecionado';
+        return;
     }
+
+    const fornecedoresNomes = [];
+    let htmlGramas = '';
+
+    selectedOptions.forEach(opt => {
+        const supId = opt.value;
+        const sup = db.suprimentos.find(s => s.id === supId);
+        if (sup) {
+            const forn = db.fornecedores.find(f => f.id === sup.fornecedorId);
+            if (forn && !fornecedoresNomes.includes(forn.nome)) {
+                fornecedoresNomes.push(forn.nome);
+            }
+
+            htmlGramas += `
+                <div class="form-group mt-2">
+                    <label style="font-weight: 500;"><i class="fa-solid fa-palette"></i> Gramas utilizadas em <strong>${sup.descricao}</strong> *</label>
+                    <input type="number" step="0.1" min="0" placeholder="Ex: 150" class="gramas-suprimento-input" data-sup-id="${sup.id}" required>
+                </div>
+            `;
+        }
+    });
+
+    containerGramas.innerHTML = htmlGramas;
+    inputFornecedores.value = fornecedoresNomes.join(', ') || 'Não informado';
 }
 
 function autopreencherValorProduto() {
@@ -523,6 +567,14 @@ function getStatusBadge(status) {
     return `<span class="badge badge-danger">Pendente</span>`;
 }
 
+// HELPER OBTER TOTAL DE GRAMAS DE UMA VENDA
+function calcularTotalGramasVenda(venda) {
+    if (venda.suprimentosUtilizados && Array.isArray(venda.suprimentosUtilizados)) {
+        return venda.suprimentosUtilizados.reduce((acc, item) => acc + (parseFloat(item.gramas) || 0), 0);
+    }
+    return venda.gramas || 0;
+}
+
 // 1. DASHBOARD (SÓ CONTABILIZA FATURADO OU RECEBIDO)
 function renderDashboard() {
     let faturamento = 0;
@@ -531,7 +583,8 @@ function renderDashboard() {
 
     vendasFinanceiro.forEach(v => {
         faturamento += v.valorFinal;
-        const custoEstimado = (v.gramas * 0.10) + 2.00;
+        const totalGramas = calcularTotalGramasVenda(v);
+        const custoEstimado = (totalGramas * 0.10) + 2.00;
         lucroEstimado += (v.valorFinal - custoEstimado);
     });
 
@@ -543,7 +596,8 @@ function renderDashboard() {
     bodyUltimas.innerHTML = vendasFinanceiro.slice(0, 5).map(v => {
         const cli = db.clientes.find(c => c.id === v.clienteId);
         const prod = db.produtos.find(p => p.id === v.produtoId);
-        const custoEst = (v.gramas * 0.10) + 2.00;
+        const totalGramas = calcularTotalGramasVenda(v);
+        const custoEst = (totalGramas * 0.10) + 2.00;
         const lucro = v.valorFinal - custoEst;
 
         return `
@@ -889,8 +943,23 @@ function imprimirComprovantePDF(vendaId) {
     const cli = db.clientes.find(c => c.id === v.clienteId);
     const prod = db.produtos.find(p => p.id === v.produtoId);
     const mat = db.materiais.find(m => m.id === v.materialId);
-    const sup = db.suprimentos.find(s => s.id === v.suprimentoId);
-    const fornSup = sup ? db.fornecedores.find(f => f.id === sup.fornecedorId) : null;
+
+    // Formatar detalhes dos suprimentos e gramas
+    let suprimentosHtml = '';
+    let totalGramas = 0;
+
+    if (v.suprimentosUtilizados && Array.isArray(v.suprimentosUtilizados)) {
+        suprimentosHtml = v.suprimentosUtilizados.map(item => {
+            const sup = db.suprimentos.find(s => s.id === item.suprimentoId);
+            const fornSup = sup ? db.fornecedores.find(f => f.id === sup.fornecedorId) : null;
+            totalGramas += parseFloat(item.gramas) || 0;
+            return `<li>${sup ? sup.descricao : 'Suprimento'}: <strong>${item.gramas}g</strong> (Fornecedor: ${fornSup ? fornSup.nome : 'N/A'})</li>`;
+        }).join('');
+    } else {
+        const sup = db.suprimentos.find(s => s.id === v.suprimentoId);
+        totalGramas = v.gramas || 0;
+        suprimentosHtml = `<li>${sup ? sup.descricao : 'N/A'}: <strong>${totalGramas}g</strong></li>`;
+    }
 
     const receiptHtml = `
         <p><strong>Número da Venda:</strong> #${v.id}</p>
@@ -901,11 +970,11 @@ function imprimirComprovantePDF(vendaId) {
         <p><strong>Contato:</strong> ${cli ? cli.telefone : 'N/A'}</p>
         <hr>
         <p><strong>Produto:</strong> ${prod ? prod.descricao : 'N/A'}</p>
-        <p><strong>Suprimento Utilizado:</strong> ${sup ? sup.descricao : 'N/A'} (Fornecedor: ${fornSup ? fornSup.nome : 'N/A'})</p>
         <p><strong>Material:</strong> ${mat ? mat.nome : 'N/A'}</p>
         <p><strong>Quantidade de Peças:</strong> ${v.quantidade}</p>
-        <p><strong>Gramas Utilizadas:</strong> ${v.gramas}g</p>
-        <p><strong>Cores:</strong> ${v.cores}</p>
+        <p><strong>Suprimentos e Consumo por Cor:</strong></p>
+        <ul>${suprimentosHtml}</ul>
+        <p><strong>Consumo Total:</strong> ${totalGramas}g</p>
         <p><strong>Tempo de Criação:</strong> ${v.tempo}</p>
         <p><strong>Observações:</strong> ${v.observacao || 'Nenhuma'}</p>
         <hr>

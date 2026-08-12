@@ -369,12 +369,12 @@
                                     <select id="venda-produto" onchange="autopreencherValorProduto()" required></select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="venda-suprimento">Suprimento Utilizado *</label>
-                                    <select id="venda-suprimento" onchange="atualizarFornecedorSuprimentoVenda()" required></select>
+                                    <label for="venda-suprimento">Suprimentos Utilizados * <small>(Segure Ctrl para selecionar mais de um)</small></label>
+                                    <select id="venda-suprimento" multiple size="4" onchange="atualizarCamposSuprimentosVenda()" required></select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="venda-suprimento-fornecedor">Fornecedor do Suprimento</label>
-                                    <input type="text" id="venda-suprimento-fornecedor" readonly class="highlight-input" placeholder="Selecione um suprimento">
+                                    <label for="venda-suprimento-fornecedor">Fornecedor(es) do(s) Suprimento(s)</label>
+                                    <input type="text" id="venda-suprimento-fornecedor" readonly class="highlight-input" placeholder="Selecione os suprimentos">
                                 </div>
                                 <div class="form-group">
                                     <label for="venda-quantidade">Quantidade de Produtos *</label>
@@ -384,14 +384,15 @@
                                     <label for="venda-material">Material Utilizado *</label>
                                     <select id="venda-material" required></select>
                                 </div>
-                                <div class="form-group">
-                                    <label for="venda-gramas">Gramas Utilizadas (g) * (Debitará do Suprimento)</label>
-                                    <input type="number" id="venda-gramas" placeholder="Ex: 150" min="0" required>
+                                
+                                <!-- CAMPO DINÂMICO PARA GRAMAS POR ITEM SELECIONADO -->
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>Gramas Utilizadas por Suprimento / Cor * (Debitará individualmente)</label>
+                                    <div id="container-gramas-suprimentos" class="card p-3" style="background: #f8fafc; border: 1px dashed var(--border-color);">
+                                        <small class="text-muted">Selecione ao menos um suprimento acima para preencher o consumo de gramas por item.</small>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="venda-cores">Cores Utilizadas (separadas por vírgula) *</label>
-                                    <input type="text" id="venda-cores" placeholder="Ex: Azul, Preto, Branco" required>
-                                </div>
+
                                 <div class="form-group">
                                     <label for="venda-tempo">Tempo de Criação / Impressão *</label>
                                     <input type="text" id="venda-tempo" placeholder="Ex: 4h 30min" required>

@@ -21,3 +21,4 @@
 .sidebar-brand{padding:8px 10px 22px}
 
 .q-fil-cost-display{display:flex;align-items:center;min-height:40px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#f8fafc;font-weight:700;color:#182230;font-size:13px}
+.quote-form-layout{width:100%}.quote-sheet-head{display:grid;grid-template-columns:1.6fr .65fr .65fr .65fr auto;gap:10px;align-items:center;padding:0 10px 7px;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.quote-readonly-value{height:40px;display:flex;align-items:center;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:#f8fafc;font-size:13px;font-weight:600}.fixed-box{background:#f8f5ff;border-color:#e6ddf8}@media(max-width:760px){.quote-sheet-head{display:none}.quote-line{grid-template-columns:1fr 1fr}.quote-line .quote-main{grid-column:span 2}.quote-readonly-value{min-height:40px}.fixed-box .form-grid{grid-template-columns:1fr}}
